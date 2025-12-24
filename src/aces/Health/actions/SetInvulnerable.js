@@ -8,7 +8,7 @@ export const config = {
       name: "Invulnerable",
       desc: "True to make invulnerable, false to allow damage.",
       type: "boolean",
-      initialValue: false,
+      initialValue: "false",
     },
   ],
 };
