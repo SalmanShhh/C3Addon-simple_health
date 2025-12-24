@@ -1,0 +1,152 @@
+{
+  "languageTag": "en-US",
+  "fileDescription": "Strings for salmanshh_simple_health.",
+  "text": {
+    "behaviors": {
+      "salmanshh_simple_health": {
+        "name": "Simple Health",
+        "description": "A complete health management behavior for Construct 3 with damage, healing, and death detection.",
+        "help-url": "https://www.construct.net",
+        "aceCategories": {
+          "Health": "Health"
+        },
+        "properties": {
+          "maxHealth": {
+            "name": "Max Health",
+            "desc": "Initial maximum health for instances with this behavior."
+          },
+          "invulnerable": {
+            "name": "Invulnerable",
+            "desc": "Start instances invulnerable to damage."
+          },
+          "destroyOnDeath": {
+            "name": "Destroy on Death",
+            "desc": "Destroy the instance when it dies."
+          }
+        },
+        "actions": {
+          "Heal": {
+            "list-name": "Heal",
+            "display-text": "Heal [b]{0}[/b] health",
+            "description": "Increase health by the specified amount (up to max health).",
+            "params": {
+              "amount": {
+                "name": "Amount",
+                "desc": "Health amount to restore"
+              }
+            }
+          },
+          "Revive": {
+            "list-name": "Revive",
+            "display-text": "Revive instance",
+            "description": "Revive the instance and restore it to max health.",
+            "params": {}
+          },
+          "SetHealth": {
+            "list-name": "Set health",
+            "display-text": "Set health to [b]{0}[/b]",
+            "description": "Set the instance's current health (clamped between 0 and max).",
+            "params": {
+              "amount": {
+                "name": "Amount",
+                "desc": "New health value."
+              }
+            }
+          },
+          "SetInvulnerable": {
+            "list-name": "Set invulnerable",
+            "display-text": "Set invulnerable to [b]{0}[/b]",
+            "description": "Set whether the instance is invulnerable to damage.",
+            "params": {
+              "state": {
+                "name": "Invulnerable",
+                "desc": "True to make invulnerable, false to allow damage."
+              }
+            }
+          },
+          "SetMaxHealth": {
+            "list-name": "Set max health",
+            "display-text": "Set max health to [b]{0}[/b]",
+            "description": "Set the instance's maximum health (minimum 1).",
+            "params": {
+              "amount": {
+                "name": "Amount",
+                "desc": "New maximum health value."
+              }
+            }
+          },
+          "TakeDamage": {
+            "list-name": "Take damage",
+            "display-text": "Take [b]{0}[/b] damage",
+            "description": "Reduce health by the specified amount.",
+            "params": {
+              "amount": {
+                "name": "Amount",
+                "desc": "The amount of damage to take."
+              }
+            }
+          }
+        },
+        "conditions": {
+          "IsDead": {
+            "list-name": "Is dead",
+            "display-text": "Is dead",
+            "description": "True if the instance is dead (health is 0).",
+            "params": {}
+          },
+          "IsInvulnerable": {
+            "list-name": "Is invulnerable",
+            "display-text": "Is invulnerable",
+            "description": "True if the instance is currently invulnerable to damage.",
+            "params": {}
+          },
+          "OnDamaged": {
+            "list-name": "On damaged",
+            "display-text": "On damaged",
+            "description": "Trigger when the instance takes damage.",
+            "params": {}
+          },
+          "OnDeath": {
+            "list-name": "On death",
+            "display-text": "On death",
+            "description": "Trigger when the instance dies.",
+            "params": {}
+          },
+          "OnHealed": {
+            "list-name": "On healed",
+            "display-text": "On healed",
+            "description": "Trigger when the instance is healed.",
+            "params": {}
+          }
+        },
+        "expressions": {
+          "CurrentHealth": {
+            "translated-name": "CurrentHealth",
+            "description": "Current health of the instance.",
+            "params": {}
+          },
+          "HealthPercent": {
+            "translated-name": "HealthPercent",
+            "description": "Current health as a percentage of max health.",
+            "params": {}
+          },
+          "LastDamage": {
+            "translated-name": "LastDamage",
+            "description": "Amount of last damage taken.",
+            "params": {}
+          },
+          "LastHeal": {
+            "translated-name": "LastHeal",
+            "description": "Amount of last healing applied.",
+            "params": {}
+          },
+          "MaxHealth": {
+            "translated-name": "MaxHealth",
+            "description": "Maximum health of the instance.",
+            "params": {}
+          }
+        }
+      }
+    }
+  }
+}
