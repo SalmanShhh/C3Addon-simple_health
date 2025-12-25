@@ -18,7 +18,7 @@ export default function (parentClass) {
     }
 
     _getDebuggerProperties(){
-      const prefix = "Health";
+      const prefix = "Simple Health";
       return[{
         title: prefix,
         properties: [
@@ -28,7 +28,7 @@ export default function (parentClass) {
           {name: "$Invulnerable", value: this._invulnerable, onedit: v => this._invulnerable = v },
           {name: "$isDead", value: this._isDead, onedit: v => this._isDead = v},
           {name: "$lastDamage", value: this._lastDamage, onedit: v => this._lastDamage = v},
-          {name: "lastHeal", value: this._lastHeal, onedit: v => this._lastHeal = v}
+          {name: "$lastHeal", value: this._lastHeal, onedit: v => this._lastHeal = v}
         ]
       }];
     }
@@ -78,7 +78,7 @@ export default function (parentClass) {
         this._trigger("OnDeath");
         
         if (this._destroyOnDeath) {
-          this._inst.Destroy();
+          this.instance.destroy();
         }
       } else {
         this._trigger("OnDamaged");
@@ -104,7 +104,7 @@ export default function (parentClass) {
         this._trigger("OnDeath");
         
         if (this._destroyOnDeath) {
-          this._inst.Destroy();
+          this.instance.destroy();
         }
       }
     }
