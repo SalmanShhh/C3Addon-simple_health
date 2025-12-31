@@ -20,7 +20,7 @@ export default function (parentClass) {
     _getDebuggerProperties(){
       const prefix = "Simple Health";
       return[{
-        title: prefix,
+        title: "$" + this.behaviorType.name,
         properties: [
           {name: "$destroyOnDeath", value: this._destroyOnDeath, onedit: v => this._destroyOnDeath = v },
           {name: "$maxHealth" , value: this._maxHealth, onedit: v => this._maxHealth = v},
