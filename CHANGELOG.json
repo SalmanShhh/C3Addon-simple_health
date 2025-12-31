@@ -3,5 +3,10 @@
     "added": "Initial release.",
     "changed": "",
     "fixed": ""
+  },
+  "1.1.0.0": {
+    "added": "Debugger will display the name given to the behaviour.",
+    "changed": "",
+    "fixed": ""
   }
 }

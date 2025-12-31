@@ -1,15 +1,15 @@
 <img src="./src/icon.svg" width="100" /><br>
 # Simple Health
 <i>A complete health management behavior for Construct 3 with damage, healing, and death detection.</i> <br>
-### Version 1.0.0.0
+### Version 1.1.0.0
 
-[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/Addon-simple_health/releases/download/salmanshh_simple_health-1.0.0.0.c3addon/salmanshh_simple_health-1.0.0.0.c3addon)
+[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.1.0.0.c3addon/salmanshh_simple_health-1.1.0.0.c3addon)
 <br>
-<sub> [See all releases](https://github.com/SalmanShhh/Addon-simple_health/releases) </sub> <br>
+<sub> [See all releases](https://github.com/SalmanShhh/C3Addon-simple_health/releases) </sub> <br>
 
-#### What's New in 1.0.0.0
+#### What's New in 1.1.0.0
 **Added:**
-Initial release.
+Debugger will display the name given to the behaviour.
 
 
 <sub>[View full changelog](#changelog)</sub>
@@ -88,6 +88,13 @@ npm run dev
 
 ---
 ## Changelog
+
+### Version 1.1.0.0
+
+**Added:**
+Debugger will display the name given to the behaviour.
+
+---
 
 ### Version 1.0.0.0
 
