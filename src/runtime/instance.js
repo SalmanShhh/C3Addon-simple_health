@@ -72,8 +72,8 @@ export default function (parentClass) {
       
       // Check for death
       if (this._currentHealth <= 0) {
-        // set health to zero and trigger death.
-        this.setHealth(0);
+        // Clamp directly — do NOT call setHealth() here, it has its own death path
+        this._currentHealth = 0;
         this._isDead = true;
         this._trigger("OnDeath");
         

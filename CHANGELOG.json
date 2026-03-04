@@ -8,5 +8,10 @@
     "added": "Debugger will display the name given to the behaviour.",
     "changed": "",
     "fixed": ""
+  },
+  "1.1.1.0": {
+    "added": "- Fix bug thatcan make \"On death\" trigger twice for a single lethal hit\n- Create Guide",
+    "changed": "",
+    "fixed": ""
   }
 }
