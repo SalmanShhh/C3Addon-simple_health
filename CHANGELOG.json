@@ -18,5 +18,10 @@
     "added": "- Add Temporary Health Pools support.\n- Set custom Absorption rates for Health & Temporary Health.\n- Temporary Health (Absorption Rate / Decay Rate)",
     "changed": "",
     "fixed": ""
+  },
+  "1.2.0.1": {
+    "added": "",
+    "changed": "",
+    "fixed": ""
   }
 }
