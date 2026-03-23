@@ -56,7 +56,7 @@ Event: Enemy collides with Bullet
 | **Dead State** | Boolean state where health reached 0 and death logic has run. |
 | **Invulnerable State** | Boolean state that ignores incoming `Take damage` calls. |
 | **Last Damage / Last Heal** | Most recent numeric values passed to `Take damage` or `Heal`. |
-| **Health Absorption Rate** | A damage multiplier (0.0–n) applied to any damage that reaches real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = double damage taken. |
+| **Health Absorption Rate** | A damage multiplier (0.0–n) applied to any damage that reaches real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = double damage taken. Setting to `0` automatically enables the **Invulnerable** flag, causing `Take damage` to exit early (including skipping all temp pools). Setting back to any value > `0` clears that flag. |
 
 ### Scenarios where this addon excels
 
@@ -430,7 +430,7 @@ Event: On start of layout
 | **Set max health** | amount | Sets max health (minimum 1), clamps current health if needed. |
 | **Set invulnerable** | state | Turns damage immunity on or off. |
 | **Revive** | — | Clears dead state and restores current health to max. Does not restore temp health. |
-| **Set health absorption rate** | rate | Sets the damage multiplier applied to real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = vulnerability. Minimum `0`. |
+| **Set health absorption rate** | rate | Sets the damage multiplier applied to real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = vulnerability. Minimum `0`. Setting to `0` also sets the **Invulnerable** flag to true, blocking `Take damage` entirely (temp pools are skipped too). Setting any value > `0` clears that flag. |
 
 ### Temporary Health
 
@@ -961,9 +961,9 @@ When `Take damage` is lethal, `takeDamage` clamps health to 0, sets dead state, 
 - **`LastDamage` only reflects damage that reached real health** — use `LastTempDamageAbsorbed` to read the intercepted portion.
 - **An empty pool does not block damage** — a pool that exists with amount = 0 is simply skipped.
 - **Use `Temp health pool is type` inside trigger events** rather than reading `LastTempHealthType` in a separate every-tick event.
-- **Health absorption rate is not invulnerability** — it scales damage, so very small amounts of damage can still deplete health. Use `Set invulnerable` for true immunity.
+- **Absorption rate `0` IS invulnerability** — setting it to `0` automatically enables the Invulnerable flag and blocks `Take damage` entirely (including temp pool processing). Any non-zero rate, no matter how small, does not set the flag and allows the damage flow to proceed normally — a rate of `0.01` is near-immune but not immune.
 - **Apply absorption rate before temp pools if you want resistance on everything** — absorption rate only affects damage that overflows past all temp pools, so pool-absorbed damage is unaffected.
-- **Absorption rate 0 makes real health immune to overflow damage**, but temp pools will still be consumed. Use this to create a "pools must be drained first" pattern without hardcoding invulnerability.
+- **Absorption rate `0` blocks `Take damage` entirely**, including temp pool processing, because it sets the Invulnerable flag. If you want temp pools to still be consumed while real health is immune, keep the rate very low (e.g. `0.001`) rather than exactly `0`.
 
 Validation example:
 

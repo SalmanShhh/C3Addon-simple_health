@@ -198,6 +198,7 @@ export default function (parentClass) {
     
     setHealthAbsorptionRate(rate) {
       this._healthAbsorptionRate = Math.max(0, rate);
+      this._invulnerable = this._healthAbsorptionRate === 0;
     }
     
     getHealthAbsorptionRate() {
