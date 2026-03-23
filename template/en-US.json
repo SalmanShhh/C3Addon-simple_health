@@ -8,7 +8,8 @@
         "description": "A complete health management behavior for Construct 3 with damage, healing, and death detection.",
         "help-url": "https://www.construct.net",
         "aceCategories": {
-          "Health": "Health"
+          "Health": "Health",
+          "Temporary Health": "Temporary Health"
         },
         "properties": {
           "maxHealth": {
@@ -27,7 +28,7 @@
         "actions": {
           "Heal": {
             "list-name": "Heal",
-            "display-text": "Heal [b]{0}[/b] health",
+            "display-text": "Heal {0} health",
             "description": "Increase health by the specified amount (up to max health).",
             "params": {
               "amount": {
@@ -44,7 +45,7 @@
           },
           "SetHealth": {
             "list-name": "Set health",
-            "display-text": "Set health to [b]{0}[/b]",
+            "display-text": "Set health to {0}",
             "description": "Set the instance's current health (clamped between 0 and max).",
             "params": {
               "amount": {
@@ -53,9 +54,20 @@
               }
             }
           },
+          "SetHealthAbsorptionRate": {
+            "list-name": "Set health absorption rate",
+            "display-text": "Set health absorption rate to {0}",
+            "description": "Set the multiplier applied to damage that reaches real health. 1.0 = normal, 0.5 = 50% damage taken (resistance), 2.0 = double damage taken (vulnerability), 0 = immune.",
+            "params": {
+              "rate": {
+                "name": "Rate",
+                "desc": "Damage multiplier for real health (e.g. 0.5 = half damage taken, 2.0 = double damage taken)."
+              }
+            }
+          },
           "SetInvulnerable": {
             "list-name": "Set invulnerable",
-            "display-text": "Set invulnerable to [b]{0}[/b]",
+            "display-text": "Set invulnerable to {0}",
             "description": "Set whether the instance is invulnerable to damage.",
             "params": {
               "state": {
@@ -66,7 +78,7 @@
           },
           "SetMaxHealth": {
             "list-name": "Set max health",
-            "display-text": "Set max health to [b]{0}[/b]",
+            "display-text": "Set max health to {0}",
             "description": "Set the instance's maximum health (minimum 1).",
             "params": {
               "amount": {
@@ -77,12 +89,131 @@
           },
           "TakeDamage": {
             "list-name": "Take damage",
-            "display-text": "Take [b]{0}[/b] damage",
+            "display-text": "Take {0} damage",
             "description": "Reduce health by the specified amount.",
             "params": {
               "amount": {
                 "name": "Amount",
                 "desc": "The amount of damage to take."
+              }
+            }
+          },
+          "AddTempHealth": {
+            "list-name": "Add temp health",
+            "display-text": "Add {1} to {0} temp health",
+            "description": "Add to a named temporary health pool.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+              },
+              "amount": {
+                "name": "Amount",
+                "desc": "The amount of temporary health to add."
+              }
+            }
+          },
+          "ClearAllTempHealth": {
+            "list-name": "Clear all temp health",
+            "display-text": "Clear all temp health pools",
+            "description": "Remove all temporary health from every named pool.",
+            "params": {}
+          },
+          "ClearTempHealth": {
+            "list-name": "Clear temp health",
+            "display-text": "Clear {0} temp health",
+            "description": "Remove all temporary health from a named pool.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool to clear."
+              }
+            }
+          },
+          "SetTempHealth": {
+            "list-name": "Set temp health",
+            "display-text": "Set {0} temp health to {1}",
+            "description": "Set a named temporary health pool to a specific value.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+              },
+              "amount": {
+                "name": "Amount",
+                "desc": "The new temporary health value."
+              }
+            }
+          },
+          "SetTempHealthAbsorptionRate": {
+            "list-name": "Set temp health absorption rate",
+            "display-text": "Set {0} temp health absorption rate to {1}",
+            "description": "Set how much of a named pool is consumed per 1 point of incoming damage. 1.0 = equal, 0.5 = armour-style (1 dmg costs 0.5 armour), 2.0 = fragile shield.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              },
+              "rate": {
+                "name": "Rate",
+                "desc": "Temp health cost per 1 point of damage (e.g. 0.5 = armour-style)."
+              }
+            }
+          },
+          "SetTempHealthDecayRate": {
+            "list-name": "Set temp health decay rate",
+            "display-text": "Set {0} temp health decay rate to {1} per second",
+            "description": "Set how much a named temporary health pool drains per second. 0 disables decay.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              },
+              "rate": {
+                "name": "Rate",
+                "desc": "Temporary health lost per second (0 = no decay)."
+              }
+            }
+          },
+          "SetTempHealthRates": {
+            "list-name": "Set temp health rates",
+            "display-text": "Set {0} temp health | decay {1}s | absorption {2}",
+            "description": "Set both the decay rate (HP lost per second) and absorption rate (temp HP cost per 1 damage) for a named pool in one action.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              },
+              "decayRate": {
+                "name": "Decay rate",
+                "desc": "Temporary health lost per second (0 = no decay)."
+              },
+              "absorptionRate": {
+                "name": "Absorption rate",
+                "desc": "Temp health cost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
+              }
+            }
+          },
+          "SetupTempHealthPool": {
+            "list-name": "Setup temp health pool",
+            "display-text": "Setup {0} temp health | amount {1} | decay {2}s | absorption {3}",
+            "description": "Fully configure a named temporary health pool in one action — sets the amount, decay rate, and absorption rate together.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+              },
+              "amount": {
+                "name": "Amount",
+                "desc": "The temporary health value to set."
+              },
+              "decayRate": {
+                "name": "Decay rate",
+                "desc": "Temporary health lost per second (0 = no decay)."
+              },
+              "absorptionRate": {
+                "name": "Absorption rate",
+                "desc": "Temp health cost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
               }
             }
           }
@@ -117,12 +248,57 @@
             "display-text": "On healed",
             "description": "Trigger when the instance is healed.",
             "params": {}
+          },
+          "HasAnyTempHealth": {
+            "list-name": "Has any temp health",
+            "display-text": "Has any temp health",
+            "description": "True if any temporary health pool has health remaining.",
+            "params": {}
+          },
+          "HasTempHealth": {
+            "list-name": "Has temp health",
+            "display-text": "{0} temp health pool has health",
+            "description": "True if a specific named temporary health pool has any health remaining.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool to check."
+              }
+            }
+          },
+          "IsTempHealthType": {
+            "list-name": "Temp health pool is type",
+            "display-text": "Temp health pool is {0}",
+            "description": "True if the temporary health pool that fired the last trigger matches the given type name. Use inside 'On temp health depleted' or 'On temp health absorbed damage' to filter by pool.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "The pool name to match against the last triggered pool."
+              }
+            }
+          },
+          "OnTempHealthAbsorbed": {
+            "list-name": "On temp health absorbed damage",
+            "display-text": "On temp health absorbed damage",
+            "description": "Triggers when temporary health intercepts incoming damage (even partially).",
+            "params": {}
+          },
+          "OnTempHealthDepleted": {
+            "list-name": "On temp health depleted",
+            "display-text": "On temp health depleted",
+            "description": "Triggers when temporary health reaches zero (from damage or time decay).",
+            "params": {}
           }
         },
         "expressions": {
           "CurrentHealth": {
             "translated-name": "CurrentHealth",
             "description": "Current health of the instance.",
+            "params": {}
+          },
+          "HealthAbsorptionRate": {
+            "translated-name": "HealthAbsorptionRate",
+            "description": "The current damage multiplier applied to real health. 1.0 = normal, 0.5 = resistance, 2.0 = vulnerability.",
             "params": {}
           },
           "HealthPercent": {
@@ -144,6 +320,46 @@
             "translated-name": "MaxHealth",
             "description": "Maximum health of the instance.",
             "params": {}
+          },
+          "LastTempDamageAbsorbed": {
+            "translated-name": "LastTempDamageAbsorbed",
+            "description": "The amount of incoming damage intercepted by temporary health on the last hit.",
+            "params": {}
+          },
+          "LastTempHealthType": {
+            "translated-name": "LastTempHealthType",
+            "description": "The name of the temporary health pool that fired the most recent 'On temp health depleted' or 'On temp health absorbed damage' trigger.",
+            "params": {}
+          },
+          "TempHealth": {
+            "translated-name": "TempHealth",
+            "description": "Current temporary health of a named pool.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              }
+            }
+          },
+          "TempHealthAbsorptionRate": {
+            "translated-name": "TempHealthAbsorptionRate",
+            "description": "Temp health cost per 1 point of incoming damage for a named pool (absorption rate). 1.0 = equal, 0.5 = armour-style.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              }
+            }
+          },
+          "TempHealthDecayRate": {
+            "translated-name": "TempHealthDecayRate",
+            "description": "Temporary health lost per second for a named pool (time-based decay rate).",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              }
+            }
           }
         }
       }

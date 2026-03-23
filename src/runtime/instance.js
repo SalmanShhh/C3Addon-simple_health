@@ -11,14 +11,21 @@ export default function (parentClass) {
       this._invulnerable = properties[1];
       this._destroyOnDeath = properties[2];
       
-      this._currentHealth = this._maxHealth
+      this._currentHealth = this._maxHealth;
       this._isDead = false;
       this._lastDamage = 0;
       this._lastHeal = 0;
+      this._healthAbsorptionRate = 1.0; // damage multiplier applied to real health (0.5 = damage resistance, 2.0 = vulnerability)
+      
+      // Temporary health pools — named, siloed, processed in insertion order
+      this._tempHealthPools = new Map(); // type → { amount, decayRate, absorptionRate, lastAbsorbed }
+      this._lastTriggerTempType = "";    // pool type that fired the most recent temp health trigger
+      this._lastTempDamageAbsorbed = 0;  // damage intercepted by the last triggered pool
+      
+      this._setTicking(true); // enable _tick() for time-based temp health decay
     }
 
     _getDebuggerProperties(){
-      const prefix = "Simple Health";
       return[{
         title: "$" + this.behaviorType.name,
         properties: [
@@ -28,7 +35,14 @@ export default function (parentClass) {
           {name: "$Invulnerable", value: this._invulnerable, onedit: v => this._invulnerable = v },
           {name: "$isDead", value: this._isDead, onedit: v => this._isDead = v},
           {name: "$lastDamage", value: this._lastDamage, onedit: v => this._lastDamage = v},
-          {name: "$lastHeal", value: this._lastHeal, onedit: v => this._lastHeal = v}
+          {name: "$lastHeal", value: this._lastHeal, onedit: v => this._lastHeal = v},
+          {name: "$healthAbsorptionRate", value: this._healthAbsorptionRate, onedit: v => this._healthAbsorptionRate = Math.max(0, v)},
+          {name: "$lastTriggerTempType", value: this._lastTriggerTempType},
+          ...[...this._tempHealthPools.entries()].flatMap(([t, p]) => [
+            {name: `$temp[${t}].amount`,         value: p.amount,         onedit: v => { p.amount         = Math.max(0, v); }},
+            {name: `$temp[${t}].decayRate`,      value: p.decayRate,      onedit: v => { p.decayRate      = Math.max(0, v); }},
+            {name: `$temp[${t}].absorptionRate`, value: p.absorptionRate, onedit: v => { p.absorptionRate = Math.max(0, v); }}
+          ])
         ]
       }];
     }
@@ -49,30 +63,92 @@ export default function (parentClass) {
         "dod": this._destroyOnDeath,
         "dead": this._isDead,
         "ld": this._lastDamage,
-        "lh": this._lastHeal
+        "lh": this._lastHeal,
+        "har": this._healthAbsorptionRate,
+        "thp": [...this._tempHealthPools.entries()].map(([k, p]) => ({
+          k, a: p.amount, dr: p.decayRate, ar: p.absorptionRate, la: p.lastAbsorbed
+        })),
+        "lttt": this._lastTriggerTempType,
+        "ltda": this._lastTempDamageAbsorbed
       };
     }
     
     _loadFromJson(o) {
-      this._maxHealth = o["mh"];
-      this._currentHealth = o["ch"];
-      this._invulnerable = o["inv"];
-      this._destroyOnDeath = o["dod"];
-      this._isDead = o["dead"];
-      this._lastDamage = o["ld"];
-      this._lastHeal = o["lh"];
+      this._maxHealth = o["mh"] ?? this._maxHealth;
+      this._currentHealth = o["ch"] ?? this._currentHealth;
+      this._invulnerable = o["inv"] ?? this._invulnerable;
+      this._destroyOnDeath = o["dod"] ?? this._destroyOnDeath;
+      this._isDead = o["dead"] ?? false;
+      this._lastDamage = o["ld"] ?? 0;
+      this._lastHeal = o["lh"] ?? 0;
+      this._healthAbsorptionRate = o["har"] ?? 1.0;
+      this._tempHealthPools.clear();
+      for (const e of (o["thp"] || [])) {
+        this._tempHealthPools.set(e.k, { amount: e.a ?? 0, decayRate: e.dr ?? 0, absorptionRate: e.ar ?? 1.0, lastAbsorbed: e.la ?? 0 });
+      }
+      this._lastTriggerTempType = o["lttt"] ?? "";
+      this._lastTempDamageAbsorbed = o["ltda"] ?? 0;
+    }
+    
+    // Per-frame tick: handle time-based temp health decay across all pools
+    _tick() {
+      const depleted = [];
+      for (const [type, pool] of this._tempHealthPools) {
+        if (pool.amount > 0 && pool.decayRate > 0) {
+          pool.amount = Math.max(0, pool.amount - pool.decayRate * this._runtime.dt);
+          if (pool.amount <= 0) depleted.push(type);
+        }
+      }
+      for (const type of depleted) {
+        this._lastTriggerTempType = type;
+        this._trigger("OnTempHealthDepleted");
+      }
+    }
+    
+    // Internal: get or create a named pool
+    _getPool(type) {
+      if (!this._tempHealthPools.has(type)) {
+        this._tempHealthPools.set(type, { amount: 0, decayRate: 0, absorptionRate: 1.0, lastAbsorbed: 0 });
+      }
+      return this._tempHealthPools.get(type);
     }
     
     // Public methods for ACEs
     takeDamage(amount) {
       if (this._invulnerable || this._isDead) return;
       
-      this._lastDamage = amount;
-      this._currentHealth -= amount;
+      let remainingDamage = amount;
       
-      // Check for death
+      // Pools are consumed in insertion order
+      for (const [type, pool] of this._tempHealthPools) {
+        if (pool.amount <= 0 || remainingDamage <= 0) continue;
+        
+        // absorptionRate=0 = invincible (never depletes from damage)
+        const maxAbsorbable = pool.absorptionRate > 0
+          ? pool.amount / pool.absorptionRate
+          : Number.MAX_VALUE;
+        
+        const damageAbsorbed = Math.min(remainingDamage, maxAbsorbable);
+        pool.amount = Math.max(0, pool.amount - damageAbsorbed * pool.absorptionRate);
+        pool.lastAbsorbed = damageAbsorbed;
+        remainingDamage -= damageAbsorbed;
+        
+        this._lastTriggerTempType = type;
+        this._lastTempDamageAbsorbed = damageAbsorbed;
+        this._trigger("OnTempHealthAbsorbed");
+        
+        if (pool.amount <= 0) {
+          this._trigger("OnTempHealthDepleted");
+        }
+      }
+      
+      if (remainingDamage <= 0) return;
+      
+      const realDamage = remainingDamage * this._healthAbsorptionRate;
+      this._lastDamage = realDamage;
+      this._currentHealth -= realDamage;
+      
       if (this._currentHealth <= 0) {
-        // Clamp directly — do NOT call setHealth() here, it has its own death path
         this._currentHealth = 0;
         this._isDead = true;
         this._trigger("OnDeath");
@@ -120,9 +196,94 @@ export default function (parentClass) {
       this._invulnerable = state;
     }
     
+    setHealthAbsorptionRate(rate) {
+      this._healthAbsorptionRate = Math.max(0, rate);
+    }
+    
+    getHealthAbsorptionRate() {
+      return this._healthAbsorptionRate;
+    }
+    
     revive() {
       this._isDead = false;
       this._currentHealth = this._maxHealth;
+    }
+    
+    addTempHealth(type, amount) {
+      this._getPool(type).amount += Math.max(0, amount);
+    }
+    
+    setTempHealth(type, amount) {
+      this._getPool(type).amount = Math.max(0, amount);
+    }
+    
+    clearTempHealth(type) {
+      const pool = this._tempHealthPools.get(type);
+      if (pool) pool.amount = 0;
+    }
+    
+    clearAllTempHealth() {
+      for (const pool of this._tempHealthPools.values()) pool.amount = 0;
+    }
+    
+    setTempHealthDecayRate(type, rate) {
+      this._getPool(type).decayRate = Math.max(0, rate);
+    }
+    
+    setTempHealthAbsorptionRate(type, rate) {
+      this._getPool(type).absorptionRate = Math.max(0, rate);
+    }
+    
+    setTempHealthRates(type, decayRate, absorptionRate) {
+      const pool = this._getPool(type);
+      pool.decayRate = Math.max(0, decayRate);
+      pool.absorptionRate = Math.max(0, absorptionRate);
+    }
+    
+    setupTempHealthPool(type, amount, decayRate, absorptionRate) {
+      const pool = this._getPool(type);
+      pool.amount = Math.max(0, amount);
+      pool.decayRate = Math.max(0, decayRate);
+      pool.absorptionRate = Math.max(0, absorptionRate);
+    }
+    
+    hasTempHealth(type) {
+      const pool = this._tempHealthPools.get(type);
+      return pool ? pool.amount > 0 : false;
+    }
+    
+    hasAnyTempHealth() {
+      for (const pool of this._tempHealthPools.values()) {
+        if (pool.amount > 0) return true;
+      }
+      return false;
+    }
+    
+    getTempHealth(type) {
+      const pool = this._tempHealthPools.get(type);
+      return pool ? pool.amount : 0;
+    }
+    
+    getTempHealthDecayRate(type) {
+      const pool = this._tempHealthPools.get(type);
+      return pool ? pool.decayRate : 0;
+    }
+    
+    getTempHealthAbsorptionRate(type) {
+      const pool = this._tempHealthPools.get(type);
+      return pool ? pool.absorptionRate : 1.0;
+    }
+    
+    getLastTempDamageAbsorbed() {
+      return this._lastTempDamageAbsorbed;
+    }
+    
+    getLastTriggerTempType() {
+      return this._lastTriggerTempType;
+    }
+    
+    isTempHealthType(type) {
+      return this._lastTriggerTempType === type;
     }
     
     isDead() {

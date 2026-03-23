@@ -13,5 +13,10 @@
     "added": "- Fix bug thatcan make \"On death\" trigger twice for a single lethal hit\n- Create Guide",
     "changed": "",
     "fixed": ""
+  },
+  "1.2.0.0": {
+    "added": "- Add Temporary Health Pools support.\n- Set custom Absorption rates for Health & Temporary Health.\n- Temporary Health (Absorption Rate / Decay Rate)",
+    "changed": "",
+    "fixed": ""
   }
 }

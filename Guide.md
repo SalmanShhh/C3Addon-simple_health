@@ -12,15 +12,16 @@
 4. [Dealing Damage and Healing](#4-dealing-damage-and-healing)
 5. [Death, Revive, and Destruction](#5-death-revive-and-destruction)
 6. [Invulnerability Windows](#6-invulnerability-windows)
-7. [Save/Load and Persistence](#7-saveload-and-persistence)
-8. [Actions Reference](#8-actions-reference)
-9. [Conditions Reference](#9-conditions-reference)
-10. [Expressions Reference](#10-expressions-reference)
-11. [Triggers Reference](#11-triggers-reference)
-12. [Game Use Cases](#12-game-use-cases)
-13. [C3 Debugger](#13-c3-debugger)
-14. [Feature Deep-Dive: Trigger Timing and Event Ordering](#14-feature-deep-dive-trigger-timing-and-event-ordering)
-15. [Tips and Common Mistakes](#15-tips-and-common-mistakes)
+7. [Temporary Health](#7-temporary-health)
+8. [Save/Load and Persistence](#8-saveload-and-persistence)
+9. [Actions Reference](#9-actions-reference)
+10. [Conditions Reference](#10-conditions-reference)
+11. [Expressions Reference](#11-expressions-reference)
+12. [Triggers Reference](#12-triggers-reference)
+13. [Game Use Cases](#13-game-use-cases)
+14. [C3 Debugger](#14-c3-debugger)
+15. [Feature Deep-Dive: Trigger Timing and Event Ordering](#15-feature-deep-dive-trigger-timing-and-event-ordering)
+16. [Tips and Common Mistakes](#16-tips-and-common-mistakes)
 
 ---
 
@@ -55,6 +56,7 @@ Event: Enemy collides with Bullet
 | **Dead State** | Boolean state where health reached 0 and death logic has run. |
 | **Invulnerable State** | Boolean state that ignores incoming `Take damage` calls. |
 | **Last Damage / Last Heal** | Most recent numeric values passed to `Take damage` or `Heal`. |
+| **Health Absorption Rate** | A damage multiplier (0.0–n) applied to any damage that reaches real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = double damage taken. |
 
 ### Scenarios where this addon excels
 
@@ -276,7 +278,109 @@ Event: Every 1 second
 
 ---
 
-## 7. Save/Load and Persistence
+## 7. Temporary Health
+
+Temporary health sits in front of real health and absorbs incoming damage before it reaches the main health pool. It is organized into **named pools** — independent silos identified by a string key (e.g. `"shield"`, `"armour"`, `"barrier"`). Each pool is completely separate; multiple pools can be active at the same time and are consumed in the order they were created.
+
+### Key concepts
+
+| Concept | What it means |
+|---|---|
+| **Pool name / type** | A string key that identifies one silo. Names are case-sensitive. |
+| **Amount** | How much temporary health the pool currently holds. |
+| **Decay rate** | HP the pool loses per second automatically (0 = no decay). |
+| **Absorption rate** | How much pool HP is spent per 1 point of incoming damage. `1.0` = equal trade. `0.5` = armour-style (1 damage costs only 0.5 pool HP, so 100 armour blocks 200 incoming damage). `2.0` = fragile shield (1 damage costs 2 pool HP). |
+| **Damage priority** | Pools are hit in insertion order (first created = first consumed). |
+
+### Three built-in pool behaviours
+
+| Type | How to configure |
+|---|---|
+| **Simple shield** — absorbs damage, no recovery | `Setup "shield" \| amount 100 \| decay 0 \| absorption 1.0` |
+| **Decaying shield** — drains away over time | `Setup "shield" \| amount 100 \| decay 10/s \| absorption 1.0` |
+| **Armour** — consumed at a reduced rate | `Setup "armour" \| amount 200 \| decay 0 \| absorption 0.5` |
+
+These are not exclusive — you can stack all three pool types on the same object simultaneously.
+
+### Setting up a pool
+
+The fastest way to configure a pool is a single `Setup temp health pool` action:
+
+```text
+Event: Player equips shield
+  Action: Player.SimpleHealth -> "Setup temp health pool", "shield", 100, 0, 1.0
+  // Creates/resets the "shield" pool with 100 HP, no decay, 1:1 absorption
+
+Event: Player equips armour
+  Action: Player.SimpleHealth -> "Setup temp health pool", "armour", 200, 0, 0.5
+  // 1 incoming damage only costs 0.5 armour HP — 200 armour blocks 400 total damage
+
+Event: Buff applied: fading barrier
+  Action: Player.SimpleHealth -> "Setup temp health pool", "barrier", 150, 25, 1.0
+  // barrier drains 25 HP/s even when not being hit
+```
+
+If you only need to adjust rates on an existing pool without changing the amount, use `Set temp health rates`:
+
+```text
+Event: Armour upgrade acquired
+  Action: Player.SimpleHealth -> "Set temp health rates", "armour", 0, 0.25
+  // Upgrade absorption rate to 0.25 — 1 damage now costs only 0.25 armour HP
+```
+
+### How damage flows through pools
+
+When `Take damage` is called:
+
+1. Each pool is checked **in insertion order**.
+2. The pool absorbs as much damage as it can based on its `absorptionRate`.
+3. If the pool is exhausted, overflow moves to the next pool in order.
+4. Any remaining damage after all pools are drained hits real health.
+5. `On temp health absorbed damage` fires for each pool that intercepted damage.
+6. `On temp health depleted` fires for each pool that reached zero.
+
+Real health and all existing health triggers (`On damaged`, `On death`) only fire if damage leaks through all pools.
+
+### Filtering trigger events by pool
+
+Both `On temp health depleted` and `On temp health absorbed damage` fire for any pool. Use `Temp health pool is type` as a sub-condition to run specific logic per pool:
+
+```text
+Event: Player.SimpleHealth -> On temp health depleted
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_break"
+    Action: Player -> Flash white
+
+Event: Player.SimpleHealth -> On temp health depleted
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "armour"
+    Action: Audio -> Play "armour_crack"
+```
+
+You can also read which pool triggered the event from the expression `LastTempHealthType`.
+
+### Removing temporary health
+
+```text
+Event: Player.SimpleHealth -> "Clear temp health", "shield"
+  // Removes the shield pool's HP (pool entry remains, amount = 0)
+
+Event: Level transition
+  Action: Player.SimpleHealth -> "Clear all temp health"
+  // Zeros every pool at once
+```
+
+### Edge cases and gotchas
+
+- Calling `Setup temp health pool` on an existing pool **replaces** its amount and rates entirely.
+- Calling `Add temp health` on a pool that does not exist yet auto-creates it with `decayRate = 0` and `absorptionRate = 1.0`.
+- An empty pool (amount = 0) is skipped during damage calculation — it does not block damage.
+- `Absorption rate = 0` makes a pool effectively invincible from damage (it will never be consumed by hits, only by decay).
+- Temporary health is **not** restored by `Heal` or `Revive`; manage it explicitly with pool actions.
+- Pool state is **fully serialized** by save/load.
+
+---
+
+## 8. Save/Load and Persistence
 
 The behavior supports Construct save/load by serializing internal health state.
 
@@ -293,8 +397,8 @@ Use this when your game uses savegames, checkpoints, or layout persistence and h
 - Dead state
 - Last damage value
 - Last heal value
-
-### Event sheet example
+- All temporary health pools (name, amount, decay rate, absorption rate)
+- Health absorption rate
 
 ```text
 Event: Player enters SavePoint
@@ -314,18 +418,30 @@ Event: On start of layout
 
 ---
 
-## 8. Actions Reference
+## 9. Actions Reference
 
 ### Health
 
-| Action | Description |
-|---|---|
-| **Take damage** | Subtracts the given amount from current health unless dead or invulnerable. Handles death checks automatically. |
-| **Heal** | Adds the given amount to current health up to max health, unless dead. |
-| **Set health** | Directly sets current health, clamped between 0 and max health. Can trigger death when crossing to 0 from alive. |
-| **Set max health** | Sets maximum health with a floor of 1, and clamps current health down if it now exceeds max. |
-| **Set invulnerable** | Turns damage immunity on or off for future `Take damage` calls. |
-| **Revive** | Clears dead state and restores current health to max health. |
+| Action | Parameters | Description |
+|---|---|---|
+| **Take damage** | amount | Subtracts from current health unless dead or invulnerable. Pools intercept first. |
+| **Heal** | amount | Adds to current health up to max health, unless dead. Does not restore temp health. |
+| **Set health** | amount | Directly sets current health, clamped 0..max. Can trigger death. |
+| **Set max health** | amount | Sets max health (minimum 1), clamps current health if needed. |
+| **Set invulnerable** | state | Turns damage immunity on or off. |
+| **Revive** | — | Clears dead state and restores current health to max. Does not restore temp health. |
+| **Set health absorption rate** | rate | Sets the damage multiplier applied to real health after all temp pools. `1.0` = normal, `0.5` = 50% resistance, `2.0` = vulnerability. Minimum `0`. |
+
+### Temporary Health
+
+| Action | Parameters | Description |
+|---|---|---|
+| **Setup temp health pool** | type, amount, decayRate, absorptionRate | Create or fully reset a named pool in one action. The recommended way to grant temp health. |
+| **Add temp health** | type, amount | Add to the amount of a named pool (auto-creates pool with default rates if new). |
+| **Set temp health** | type, amount | Set a named pool's amount to an exact value. |
+| **Set temp health rates** | type, decayRate, absorptionRate | Set both rates for an existing pool without changing its amount. |
+| **Clear temp health** | type | Zero the amount of one named pool. |
+| **Clear all temp health** | — | Zero the amount of every pool. |
 
 Action usage example:
 
@@ -334,16 +450,30 @@ Event: Difficulty changed to Hard
   Action: Enemy.SimpleHealth -> "Set max health", 250
   Action: Enemy.SimpleHealth -> "Set health", 250
   // Re-scales active enemies for new difficulty
+
+Event: Boss phase 2 begins
+  Action: Boss.SimpleHealth -> "Setup temp health pool", "phase_shield", 500, 0, 1.0
+  // Grants a named shield pool that must be broken before dealing real damage
 ```
 
 ---
 
-## 9. Conditions Reference
+## 10. Conditions Reference
+
+### Health
 
 | Condition | Description |
 |---|---|
 | **Is dead** | True when this instance is in dead state (health reached 0 and death logic applied). |
 | **Is invulnerable** | True when this instance currently ignores `Take damage`. |
+
+### Temporary Health
+
+| Condition | Parameters | Description |
+|---|---|---|
+| **Has temp health** | type | True if the named pool currently has any amount remaining. Invertible. |
+| **Has any temp health** | — | True if any pool has any amount remaining. Invertible. |
+| **Temp health pool is type** | type | True if the pool that fired the last temp health trigger matches the given name. Use inside `On temp health depleted` or `On temp health absorbed damage` to branch by pool. |
 
 Condition usage example:
 
@@ -352,19 +482,37 @@ Event: On fire button pressed
   Condition: Player.SimpleHealth -> Is dead (inverted)
   Action: PlayerWeapon -> Shoot
   // Prevent actions while dead
+
+Event: On shield upgrade button pressed
+  Condition: Player.SimpleHealth -> Has temp health "shield" (inverted)
+  Action: Player.SimpleHealth -> "Setup temp health pool", "shield", 100, 0, 1.0
+  // Only grant a shield if one is not already active
 ```
 
 ---
 
-## 10. Expressions Reference
+## 11. Expressions Reference
+
+### Health
 
 | Expression | Returns | Description |
 |---|---|---|
 | **CurrentHealth** | Number | Current health value for this instance. |
 | **MaxHealth** | Number | Current max-health cap for this instance. |
 | **HealthPercent** | Number | Health percentage in the 0..100 range. |
-| **LastDamage** | Number | Most recent value passed to `Take damage`. |
+| **LastDamage** | Number | Most recent damage that reached real health via `Take damage`. |
 | **LastHeal** | Number | Most recent value passed to `Heal`. |
+| **HealthAbsorptionRate** | Number | Current damage multiplier applied to real health. `1.0` by default. |
+
+### Temporary Health
+
+| Expression | Parameters | Returns | Description |
+|---|---|---|---|
+| **TempHealth** | type (string) | Number | Current amount in the named pool. Returns 0 if the pool does not exist. |
+| **TempHealthDecayRate** | type (string) | Number | Decay rate (HP/s) of the named pool. |
+| **TempHealthAbsorptionRate** | type (string) | Number | Absorption rate of the named pool. |
+| **LastTempDamageAbsorbed** | — | Number | Incoming damage intercepted by the pool that most recently fired a trigger. |
+| **LastTempHealthType** | — | String | Name of the pool that fired the most recent `On temp health depleted` or `On temp health absorbed damage` trigger. |
 
 Expression usage example:
 
@@ -372,30 +520,51 @@ Expression usage example:
 Event: Every tick
   Action: HPText -> Set text to "HP: " & int(Player.SimpleHealth.CurrentHealth) & "/" & int(Player.SimpleHealth.MaxHealth)
   // Live HUD readout
+
+Event: Every tick
+  Action: ShieldBar -> Set width to (Player.SimpleHealth.TempHealth("shield") / 100) * 200
+  // Shield bar scales with shield pool amount
+
+Event: Player.SimpleHealth -> On temp health absorbed damage
+  Action: ShieldHitText -> Set text to "-" & int(Player.SimpleHealth.LastTempDamageAbsorbed)
+  // Floating number showing how much the shield just blocked
 ```
 
 ---
 
-## 11. Triggers Reference
+## 12. Triggers Reference
+
+### Health
 
 | Trigger | Description |
 |---|---|
-| **On damaged** | Fires when non-lethal damage is applied successfully. |
+| **On damaged** | Fires when damage reaches real health (non-lethal). Fires only after all temp health pools are drained. |
 | **On healed** | Fires when healing is applied successfully (while alive). |
-| **On death** | Fires when the instance enters dead state. |
+| **On death** | Fires when real health reaches zero. |
 
-Trigger usage example:
+### Temporary Health
+
+| Trigger | Description |
+|---|---|
+| **On temp health absorbed damage** | Fires once per pool that intercepted any portion of an incoming hit. |
+| **On temp health depleted** | Fires when any pool's amount reaches zero (from damage or time decay). |
+
+Use `Temp health pool is type` as a sub-condition inside either trigger to run pool-specific logic:
 
 ```text
+Event: Player.SimpleHealth -> On temp health depleted
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_break"
+
 Event: Player.SimpleHealth -> On damaged
   Action: Camera -> Shake
   Action: Audio -> Play "hit"
-  // Hit feedback pipeline
+  // Only fires when damage gets past all pools to real health
 ```
 
 ---
 
-## 12. Game Use Cases
+## 13. Game Use Cases
 
 ### 1) Basic player damage loop
 
@@ -549,18 +718,141 @@ Event: On continue selected
   // Restores behavior state automatically
 ```
 
-### 13) Combined pattern: boss phase + invulnerability + revive fallback
+### 13) Shield that breaks and shows feedback
 
-**Scenario:** Boss enters shielded phase at low HP; player can still revive.
+**Scenario:** Player has a shield that blocks damage, plays a sound when hit, and breaks with a visual effect.
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Setup temp health pool", "shield", 100, 0, 1.0
+
+Event: Player.SimpleHealth -> On temp health absorbed damage
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_hit"
+    Action: ShieldText -> Set text to int(Player.SimpleHealth.TempHealth("shield"))
+
+Event: Player.SimpleHealth -> On temp health depleted
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_break"
+    Action: Player -> Flash white
+```
+
+### 14) Decaying barrier (time-based)
+
+**Scenario:** A buff grants a barrier that fades over 10 seconds regardless of hits.
+
+```text
+Event: Player collects Barrier Powerup
+  Action: Player.SimpleHealth -> "Setup temp health pool", "barrier", 200, 20, 1.0
+  // Decays 20 HP/s → lasts 10 seconds with no hits
+
+Event: Every tick
+  Action: BarrierBar -> Set width to (Player.SimpleHealth.TempHealth("barrier") / 200) * 200
+
+Event: Player.SimpleHealth -> On temp health depleted
+  Sub-condition: Player.SimpleHealth -> Temp health pool is "barrier"
+    Action: Audio -> Play "barrier_expired"
+```
+
+### 15) Layered armour + shield
+
+**Scenario:** Enemy has armour (damaged at reduced rate) underneath a shield (takes full damage first). Shield must be destroyed before armour starts taking hits.
+
+```text
+Event: On start of layout
+  // Shield created first → consumed first
+  Action: Boss.SimpleHealth -> "Setup temp health pool", "shield", 150, 0, 1.0
+  // Armour created second → consumed after shield is gone
+  Action: Boss.SimpleHealth -> "Setup temp health pool", "armour", 300, 0, 0.5
+
+Event: Boss.SimpleHealth -> On temp health depleted
+  Sub-condition: Boss.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_break"
+  Sub-condition: Boss.SimpleHealth -> Temp health pool is "armour"
+    Action: Audio -> Play "armour_destroyed"
+    // Now real health is exposed
+```
+
+### 17) Damage resistance (armoured enemy)
+
+**Scenario:** An armoured enemy takes only 50% of all incoming damage, making it tankier without changing its max HP.
+
+```text
+Event: On enemy spawned
+  Action: Enemy.SimpleHealth -> "Set health absorption rate", 0.5
+  // All damage reaching real health is halved
+
+Event: Player attacks enemy
+  Action: Enemy.SimpleHealth -> "Take damage", 40
+  // Enemy only loses 20 HP; armour absorption handled invisibly
+```
+
+### 18) Type weakness / vulnerability
+
+**Scenario:** A fire elemental takes double damage from water attacks.
+
+```text
+Event: WaterProjectile overlaps FireEnemy
+  Action: FireEnemy.SimpleHealth -> "Set health absorption rate", 2.0
+  Action: FireEnemy.SimpleHealth -> "Take damage", WaterProjectile.BaseDamage
+  Action: FireEnemy.SimpleHealth -> "Set health absorption rate", 1.0
+  // Temporarily double absorption for this hit, then restore
+
+Event: FireEnemy.SimpleHealth -> On damaged
+  Action: System -> Create object "WeaknessFX" at FireEnemy.X, FireEnemy.Y
+```
+
+### 19) Combined: temp shield + resistant real health
+
+**Scenario:** A tank unit has a shield pool that absorbs full damage, and when the shield is gone, its real health only takes 40% of any leftover damage.
+
+```text
+Event: On start of layout
+  Action: Tank.SimpleHealth -> "Set health absorption rate", 0.4
+  // Real health passively resists all overflow damage
+  Action: Tank.SimpleHealth -> "Setup temp health pool", "shield", 200, 0, 1.0
+  // Shield absorbs first 200 damage at full rate
+
+Event: Tank.SimpleHealth -> On temp health depleted
+  Sub-condition: Tank.SimpleHealth -> Temp health pool is "shield"
+    Action: Audio -> Play "shield_break"
+    // Real health now exposed but still at 40% absorption
+```
+
+### 20) Dynamic resistance buff / debuff
+
+**Scenario:** A "Fortify" spell makes the player take 25% damage for 5 seconds, then returns to normal.
+
+```text
+Event: Player uses Fortify
+  Condition: Player.SimpleHealth -> Is dead (inverted)
+  Action: Player.SimpleHealth -> "Set health absorption rate", 0.25
+  Action: FortifyFX -> Start animation
+  Action: System -> Wait 5.0 seconds
+  Action: Player.SimpleHealth -> "Set health absorption rate", 1.0
+  Action: FortifyFX -> Stop animation
+  // Time-limited damage reduction without invulnerability
+
+Event: Every tick
+  Action: ResistText -> Set text to "Resistance: " & int((1 - Player.SimpleHealth.HealthAbsorptionRate) * 100) & "%"
+  // Dynamic UI showing current resistance percentage
+```
+
+### 16) Combined pattern: boss phase + temp health + invulnerability + revive fallback
+
+**Scenario:** Boss enters a shielded phase at low HP using a temp health pool; player can still revive.
 
 ```text
 Event: Every tick
   Condition: Boss.SimpleHealth.HealthPercent <= 25
-  Action: Boss.SimpleHealth -> "Set invulnerable", True
-  // Phase transition to shielded mode
+  Condition: Boss.SimpleHealth -> Has temp health "phase_shield" (inverted)
+    Action: Boss.SimpleHealth -> "Setup temp health pool", "phase_shield", 500, 0, 1.0
+    // Grant phase shield pool once when HP drops below 25%
 
-Event: BossShieldBroken = True
-  Action: Boss.SimpleHealth -> "Set invulnerable", False
+Event: Boss.SimpleHealth -> On temp health depleted
+  Sub-condition: Boss.SimpleHealth -> Temp health pool is "phase_shield"
+    Action: Audio -> Play "phase_shield_break"
+    // Real health is now exposed again
 
 Event: Player.SimpleHealth -> On death
   Action: UI -> Show "Use Continue?"
@@ -575,7 +867,7 @@ Event: ContinueAccepted = True
 
 ---
 
-## 13. C3 Debugger
+## 14. C3 Debugger
 
 Simple Health implements `_getDebuggerProperties`, so live state appears in the Construct debugger.
 
@@ -595,6 +887,11 @@ Simple Health implements `_getDebuggerProperties`, so live state appears in the 
 | **isDead** | Current dead-state flag. |
 | **lastDamage** | Last damage amount received via `Take damage`. |
 | **lastHeal** | Last heal amount received via `Heal`. |
+| **lastTriggerTempType** | Name of the pool that fired the most recent temp health trigger. |
+| **healthAbsorptionRate** | Current damage multiplier for real health. |
+| **temp[name].amount** | Current amount in a named pool (one entry per pool). |
+| **temp[name].decayRate** | Decay rate of a named pool. |
+| **temp[name].absorptionRate** | Absorption rate of a named pool. |
 
 ### How to open the debugger
 
@@ -613,7 +910,7 @@ Event: Press key K
 
 ---
 
-## 14. Feature Deep-Dive: Trigger Timing and Event Ordering
+## 15. Feature Deep-Dive: Trigger Timing and Event Ordering
 
 This section explains how health triggers fire during real gameplay events.
 
@@ -649,7 +946,7 @@ When `Take damage` is lethal, `takeDamage` clamps health to 0, sets dead state, 
 
 ---
 
-## 15. Tips and Common Mistakes
+## 16. Tips and Common Mistakes
 
 - **Do not pass negative amounts** to `Take damage` or `Heal`; validate inputs first.
 - **Remember invulnerability only blocks damage**, not `Set health`.
@@ -658,6 +955,15 @@ When `Take damage` is lethal, `takeDamage` clamps health to 0, sets dead state, 
 - **Use `Set max health` + `Set health` together** when rescaling entities mid-run.
 - **Do not assume `Revive` triggers heal events**; fire your own revive FX/SFX.
 - **Use expressions for UI every tick**, but use triggers for one-shot effects.
+- **Pool creation order determines damage priority** — the first pool created is always consumed first.
+- **`Setup temp health pool` replaces** the amount and both rates; use `Add temp health` if you want to stack on top of existing amounts.
+- **Temp health is never restored by `Heal` or `Revive`** — manage pools with their own actions.
+- **`LastDamage` only reflects damage that reached real health** — use `LastTempDamageAbsorbed` to read the intercepted portion.
+- **An empty pool does not block damage** — a pool that exists with amount = 0 is simply skipped.
+- **Use `Temp health pool is type` inside trigger events** rather than reading `LastTempHealthType` in a separate every-tick event.
+- **Health absorption rate is not invulnerability** — it scales damage, so very small amounts of damage can still deplete health. Use `Set invulnerable` for true immunity.
+- **Apply absorption rate before temp pools if you want resistance on everything** — absorption rate only affects damage that overflows past all temp pools, so pool-absorbed damage is unaffected.
+- **Absorption rate 0 makes real health immune to overflow damage**, but temp pools will still be consumed. Use this to create a "pools must be drained first" pattern without hardcoding invulnerability.
 
 Validation example:
 
