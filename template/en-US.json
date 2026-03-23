@@ -175,6 +175,21 @@
               }
             }
           },
+          "SetTempHealthPriority": {
+            "list-name": "Set temp health pool priority",
+            "display-text": "Set {0} temp health pool priority to {1}",
+            "description": "Set the damage-absorption priority for a named pool. Lower numbers are consumed first. Default is 0. Use this to reorder existing pools without changing their amounts or rates.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              },
+              "priority": {
+                "name": "Priority",
+                "desc": "Damage absorption priority. Lower numbers are consumed first."
+              }
+            }
+          },
           "SetTempHealthRates": {
             "list-name": "Set temp health rates",
             "display-text": "Set {0} temp health | decay {1}s | absorption {2}",
@@ -196,8 +211,8 @@
           },
           "SetupTempHealthPool": {
             "list-name": "Setup temp health pool",
-            "display-text": "Setup {0} temp health | amount {1} | decay {2}s | absorption {3}",
-            "description": "Fully configure a named temporary health pool in one action — sets the amount, decay rate, and absorption rate together.",
+            "display-text": "Setup {0} temp health | amount {1} | decay {2}s | absorption {3} | priority {4}",
+            "description": "Fully configure a named temporary health pool in one action — sets the amount, decay rate, absorption rate, and priority together.",
             "params": {
               "type": {
                 "name": "Type",
@@ -214,6 +229,10 @@
               "absorptionRate": {
                 "name": "Absorption rate",
                 "desc": "Temp health cost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
+              },
+              "priority": {
+                "name": "Priority",
+                "desc": "Damage absorption priority. Lower numbers are consumed first. Default 0."
               }
             }
           }
@@ -354,6 +373,16 @@
           "TempHealthDecayRate": {
             "translated-name": "TempHealthDecayRate",
             "description": "Temporary health lost per second for a named pool (time-based decay rate).",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Name of the temporary health pool."
+              }
+            }
+          },
+          "TempHealthPriority": {
+            "translated-name": "TempHealthPriority",
+            "description": "Damage absorption priority of the named pool. Lower numbers are consumed first. Returns 0 if the pool does not exist.",
             "params": {
               "type": {
                 "name": "Type",

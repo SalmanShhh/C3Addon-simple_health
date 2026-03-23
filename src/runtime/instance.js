@@ -17,8 +17,8 @@ export default function (parentClass) {
       this._lastHeal = 0;
       this._healthAbsorptionRate = 1.0; // damage multiplier applied to real health (0.5 = damage resistance, 2.0 = vulnerability)
       
-      // Temporary health pools — named, siloed, processed in insertion order
-      this._tempHealthPools = new Map(); // type → { amount, decayRate, absorptionRate, lastAbsorbed }
+      // Temporary health pools — named, siloed, processed in ascending priority order
+      this._tempHealthPools = new Map(); // type → { amount, decayRate, absorptionRate, lastAbsorbed, priority }
       this._lastTriggerTempType = "";    // pool type that fired the most recent temp health trigger
       this._lastTempDamageAbsorbed = 0;  // damage intercepted by the last triggered pool
       
@@ -41,7 +41,8 @@ export default function (parentClass) {
           ...[...this._tempHealthPools.entries()].flatMap(([t, p]) => [
             {name: `$temp[${t}].amount`,         value: p.amount,         onedit: v => { p.amount         = Math.max(0, v); }},
             {name: `$temp[${t}].decayRate`,      value: p.decayRate,      onedit: v => { p.decayRate      = Math.max(0, v); }},
-            {name: `$temp[${t}].absorptionRate`, value: p.absorptionRate, onedit: v => { p.absorptionRate = Math.max(0, v); }}
+            {name: `$temp[${t}].absorptionRate`, value: p.absorptionRate, onedit: v => { p.absorptionRate = Math.max(0, v); }},
+            {name: `$temp[${t}].priority`,       value: p.priority,       onedit: v => { p.priority       = v; }}
           ])
         ]
       }];
@@ -66,7 +67,7 @@ export default function (parentClass) {
         "lh": this._lastHeal,
         "har": this._healthAbsorptionRate,
         "thp": [...this._tempHealthPools.entries()].map(([k, p]) => ({
-          k, a: p.amount, dr: p.decayRate, ar: p.absorptionRate, la: p.lastAbsorbed
+          k, a: p.amount, dr: p.decayRate, ar: p.absorptionRate, la: p.lastAbsorbed, pr: p.priority
         })),
         "lttt": this._lastTriggerTempType,
         "ltda": this._lastTempDamageAbsorbed
@@ -84,7 +85,7 @@ export default function (parentClass) {
       this._healthAbsorptionRate = o["har"] ?? 1.0;
       this._tempHealthPools.clear();
       for (const e of (o["thp"] || [])) {
-        this._tempHealthPools.set(e.k, { amount: e.a ?? 0, decayRate: e.dr ?? 0, absorptionRate: e.ar ?? 1.0, lastAbsorbed: e.la ?? 0 });
+        this._tempHealthPools.set(e.k, { amount: e.a ?? 0, decayRate: e.dr ?? 0, absorptionRate: e.ar ?? 1.0, lastAbsorbed: e.la ?? 0, priority: e.pr ?? 0 });
       }
       this._lastTriggerTempType = o["lttt"] ?? "";
       this._lastTempDamageAbsorbed = o["ltda"] ?? 0;
@@ -93,7 +94,8 @@ export default function (parentClass) {
     // Per-frame tick: handle time-based temp health decay across all pools
     _tick() {
       const depleted = [];
-      for (const [type, pool] of this._tempHealthPools) {
+      const sorted = [...this._tempHealthPools.entries()].sort((a, b) => a[1].priority - b[1].priority);
+      for (const [type, pool] of sorted) {
         if (pool.amount > 0 && pool.decayRate > 0) {
           pool.amount = Math.max(0, pool.amount - pool.decayRate * this._runtime.dt);
           if (pool.amount <= 0) depleted.push(type);
@@ -108,7 +110,7 @@ export default function (parentClass) {
     // Internal: get or create a named pool
     _getPool(type) {
       if (!this._tempHealthPools.has(type)) {
-        this._tempHealthPools.set(type, { amount: 0, decayRate: 0, absorptionRate: 1.0, lastAbsorbed: 0 });
+        this._tempHealthPools.set(type, { amount: 0, decayRate: 0, absorptionRate: 1.0, lastAbsorbed: 0, priority: 0 });
       }
       return this._tempHealthPools.get(type);
     }
@@ -119,8 +121,9 @@ export default function (parentClass) {
       
       let remainingDamage = amount;
       
-      // Pools are consumed in insertion order
-      for (const [type, pool] of this._tempHealthPools) {
+      // Pools are consumed in ascending priority order (lower number = first consumed)
+      const sortedPools = [...this._tempHealthPools.entries()].sort((a, b) => a[1].priority - b[1].priority);
+      for (const [type, pool] of sortedPools) {
         if (pool.amount <= 0 || remainingDamage <= 0) continue;
         
         // absorptionRate=0 = invincible (never depletes from damage)
@@ -241,11 +244,21 @@ export default function (parentClass) {
       pool.absorptionRate = Math.max(0, absorptionRate);
     }
     
-    setupTempHealthPool(type, amount, decayRate, absorptionRate) {
+    setupTempHealthPool(type, amount, decayRate, absorptionRate, priority = 0) {
       const pool = this._getPool(type);
       pool.amount = Math.max(0, amount);
       pool.decayRate = Math.max(0, decayRate);
       pool.absorptionRate = Math.max(0, absorptionRate);
+      pool.priority = priority;
+    }
+
+    setTempHealthPriority(type, priority) {
+      this._getPool(type).priority = priority;
+    }
+
+    getTempHealthPriority(type) {
+      const pool = this._tempHealthPools.get(type);
+      return pool ? pool.priority : 0;
     }
     
     hasTempHealth(type) {

@@ -23,5 +23,10 @@
     "added": "",
     "changed": "",
     "fixed": ""
+  },
+  "1.2.0.2": {
+    "added": "- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.",
+    "changed": "",
+    "fixed": ""
   }
 }

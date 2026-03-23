@@ -1,11 +1,18 @@
 <img src="./src/icon.svg" width="100" /><br>
 # Simple Health
 <i>A complete health management behavior for Construct 3 with damage, healing, and death detection.</i> <br>
-### Version 1.2.0.1
+### Version 1.2.0.2
 
-[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.2.0.1.c3addon/salmanshh_simple_health-1.2.0.1.c3addon)
+[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.2.0.2.c3addon/salmanshh_simple_health-1.2.0.2.c3addon)
 <br>
 <sub> [See all releases](https://github.com/SalmanShhh/C3Addon-simple_health/releases) </sub> <br>
+
+#### What's New in 1.2.0.2
+**Added:**
+- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.
+
+
+<sub>[View full changelog](#changelog)</sub>
 
 ---
 <b><u>Author:</u></b> SalmanShh <br>
@@ -62,8 +69,9 @@ npm run dev
 | Set temp health | Set a named temporary health pool to a specific value. | Type             *(string)* <br>Amount             *(number)* <br> |
 | Set temp health absorption rate | Set how much of a named pool is consumed per 1 point of incoming damage. 1.0 = equal, 0.5 = armour-style (1 dmg costs 0.5 armour), 2.0 = fragile shield. | Type             *(string)* <br>Rate             *(number)* <br> |
 | Set temp health decay rate | Set how much a named temporary health pool drains per second. 0 disables decay. | Type             *(string)* <br>Rate             *(number)* <br> |
+| Set temp health pool priority | Set the damage-absorption priority for a named pool. Lower numbers are consumed first. Default is 0. Use this to reorder existing pools without changing their amounts or rates. | Type             *(string)* <br>Priority             *(number)* <br> |
 | Set temp health rates | Set both the decay rate (HP lost per second) and absorption rate (temp HP cost per 1 damage) for a named pool in one action. | Type             *(string)* <br>Decay rate             *(number)* <br>Absorption rate             *(number)* <br> |
-| Setup temp health pool | Fully configure a named temporary health pool in one action — sets the amount, decay rate, and absorption rate together. | Type             *(string)* <br>Amount             *(number)* <br>Decay rate             *(number)* <br>Absorption rate             *(number)* <br> |
+| Setup temp health pool | Fully configure a named temporary health pool in one action — sets the amount, decay rate, absorption rate, and priority together. | Type             *(string)* <br>Amount             *(number)* <br>Decay rate             *(number)* <br>Absorption rate             *(number)* <br>Priority             *(number)* <br> |
 
 
 ---
@@ -97,10 +105,18 @@ npm run dev
 | TempHealth | Current temporary health of a named pool. | number | Type *(string)* <br> | 
 | TempHealthAbsorptionRate | Temp health cost per 1 point of incoming damage for a named pool (absorption rate). 1.0 = equal, 0.5 = armour-style. | number | Type *(string)* <br> | 
 | TempHealthDecayRate | Temporary health lost per second for a named pool (time-based decay rate). | number | Type *(string)* <br> | 
+| TempHealthPriority | Damage absorption priority of the named pool. Lower numbers are consumed first. Returns 0 if the pool does not exist. | number | Type *(string)* <br> | 
 
 
 ---
 ## Changelog
+
+### Version 1.2.0.2
+
+**Added:**
+- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.
+
+---
 
 ### Version 1.2.0.1
 

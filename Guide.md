@@ -290,15 +290,15 @@ Temporary health sits in front of real health and absorbs incoming damage before
 | **Amount** | How much temporary health the pool currently holds. |
 | **Decay rate** | HP the pool loses per second automatically (0 = no decay). |
 | **Absorption rate** | How much pool HP is spent per 1 point of incoming damage. `1.0` = equal trade. `0.5` = armour-style (1 damage costs only 0.5 pool HP, so 100 armour blocks 200 incoming damage). `2.0` = fragile shield (1 damage costs 2 pool HP). |
-| **Damage priority** | Pools are hit in insertion order (first created = first consumed). |
+| **Damage priority** | A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order. |
 
 ### Three built-in pool behaviours
 
 | Type | How to configure |
 |---|---|
-| **Simple shield** — absorbs damage, no recovery | `Setup "shield" \| amount 100 \| decay 0 \| absorption 1.0` |
-| **Decaying shield** — drains away over time | `Setup "shield" \| amount 100 \| decay 10/s \| absorption 1.0` |
-| **Armour** — consumed at a reduced rate | `Setup "armour" \| amount 200 \| decay 0 \| absorption 0.5` |
+| **Simple shield** — absorbs damage, no recovery | `Setup "shield" \| amount 100 \| decay 0 \| absorption 1.0 \| priority 0` |
+| **Decaying shield** — drains away over time | `Setup "shield" \| amount 100 \| decay 10/s \| absorption 1.0 \| priority 0` |
+| **Armour** — consumed at a reduced rate | `Setup "armour" \| amount 200 \| decay 0 \| absorption 0.5 \| priority 1` |
 
 These are not exclusive — you can stack all three pool types on the same object simultaneously.
 
@@ -436,7 +436,8 @@ Event: On start of layout
 
 | Action | Parameters | Description |
 |---|---|---|
-| **Setup temp health pool** | type, amount, decayRate, absorptionRate | Create or fully reset a named pool in one action. The recommended way to grant temp health. |
+| **Setup temp health pool** | type, amount, decayRate, absorptionRate, priority | Create or fully reset a named pool in one action. The recommended way to grant temp health. |
+| **Set temp health pool priority** | type, priority | Change the absorption priority of an existing pool without touching its amount or rates. |
 | **Add temp health** | type, amount | Add to the amount of a named pool (auto-creates pool with default rates if new). |
 | **Set temp health** | type, amount | Set a named pool's amount to an exact value. |
 | **Set temp health rates** | type, decayRate, absorptionRate | Set both rates for an existing pool without changing its amount. |
@@ -511,6 +512,7 @@ Event: On shield upgrade button pressed
 | **TempHealth** | type (string) | Number | Current amount in the named pool. Returns 0 if the pool does not exist. |
 | **TempHealthDecayRate** | type (string) | Number | Decay rate (HP/s) of the named pool. |
 | **TempHealthAbsorptionRate** | type (string) | Number | Absorption rate of the named pool. |
+| **TempHealthPriority** | type (string) | Number | Damage absorption priority of the named pool. Lower = consumed first. |
 | **LastTempDamageAbsorbed** | — | Number | Incoming damage intercepted by the pool that most recently fired a trigger. |
 | **LastTempHealthType** | — | String | Name of the pool that fired the most recent `On temp health depleted` or `On temp health absorbed damage` trigger. |
 
@@ -892,6 +894,7 @@ Simple Health implements `_getDebuggerProperties`, so live state appears in the 
 | **temp[name].amount** | Current amount in a named pool (one entry per pool). |
 | **temp[name].decayRate** | Decay rate of a named pool. |
 | **temp[name].absorptionRate** | Absorption rate of a named pool. |
+| **temp[name].priority** | Damage absorption priority of a named pool. |
 
 ### How to open the debugger
 
@@ -955,8 +958,8 @@ When `Take damage` is lethal, `takeDamage` clamps health to 0, sets dead state, 
 - **Use `Set max health` + `Set health` together** when rescaling entities mid-run.
 - **Do not assume `Revive` triggers heal events**; fire your own revive FX/SFX.
 - **Use expressions for UI every tick**, but use triggers for one-shot effects.
-- **Pool creation order determines damage priority** — the first pool created is always consumed first.
-- **`Setup temp health pool` replaces** the amount and both rates; use `Add temp health` if you want to stack on top of existing amounts.
+- **Pool priority determines damage order** — lower `priority` numbers are consumed first. Equal-priority pools fall back to creation order. Use `Set temp health pool priority` to reorder pools mid-game without rebuilding them.
+- **`Setup temp health pool` replaces** the amount, all rates, and the priority; use `Add temp health` if you want to stack on top of existing amounts.
 - **Temp health is never restored by `Heal` or `Revive`** — manage pools with their own actions.
 - **`LastDamage` only reflects damage that reached real health** — use `LastTempDamageAbsorbed` to read the intercepted portion.
 - **An empty pool does not block damage** — a pool that exists with amount = 0 is simply skipped.
