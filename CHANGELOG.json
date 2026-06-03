@@ -28,5 +28,10 @@
     "added": "- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.",
     "changed": "",
     "fixed": ""
+  },
+  "1.2.1.0": {
+    "added": "- Add Revive Action\n- On Health Changed Condition\n- Trigger condition for Health pool Added.\n",
+    "changed": "",
+    "fixed": ""
   }
 }

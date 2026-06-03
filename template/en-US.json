@@ -39,9 +39,14 @@
           },
           "Revive": {
             "list-name": "Revive",
-            "display-text": "Revive instance",
-            "description": "Revive the instance and restore it to max health.",
-            "params": {}
+            "display-text": "Revive instance (health: {0})",
+            "description": "Revive the instance. Use -1 to restore to max health, or specify an amount.",
+            "params": {
+              "amount": {
+                "name": "Amount",
+                "desc": "Health to restore on revive. Use -1 to restore to max health."
+              }
+            }
           },
           "SetHealth": {
             "list-name": "Set health",
@@ -268,6 +273,18 @@
             "description": "Trigger when the instance is healed.",
             "params": {}
           },
+          "OnHealthChanged": {
+            "list-name": "On health changed",
+            "display-text": "On health changed",
+            "description": "Triggers whenever health changes for any reason (damage, healing, set health, revive, or max health clamp).",
+            "params": {}
+          },
+          "OnRevived": {
+            "list-name": "On revived",
+            "display-text": "On revived",
+            "description": "Triggers when the instance is revived from death.",
+            "params": {}
+          },
           "HasAnyTempHealth": {
             "list-name": "Has any temp health",
             "display-text": "Has any temp health",
@@ -300,6 +317,12 @@
             "list-name": "On temp health absorbed damage",
             "display-text": "On temp health absorbed damage",
             "description": "Triggers when temporary health intercepts incoming damage (even partially).",
+            "params": {}
+          },
+          "OnTempHealthAdded": {
+            "list-name": "On temp health added",
+            "display-text": "On temp health added",
+            "description": "Triggers when temporary health is added to a pool. Use LastTempHealthType to identify which pool was affected.",
             "params": {}
           },
           "OnTempHealthDepleted": {

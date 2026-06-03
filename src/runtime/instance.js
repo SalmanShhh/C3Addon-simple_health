@@ -93,11 +93,12 @@ export default function (parentClass) {
     
     // Per-frame tick: handle time-based temp health decay across all pools
     _tick() {
+      if (this._tempHealthPools.size === 0) return;
       const depleted = [];
       const sorted = [...this._tempHealthPools.entries()].sort((a, b) => a[1].priority - b[1].priority);
       for (const [type, pool] of sorted) {
         if (pool.amount > 0 && pool.decayRate > 0) {
-          pool.amount = Math.max(0, pool.amount - pool.decayRate * this._runtime.dt);
+          pool.amount = Math.max(0, pool.amount - pool.decayRate * this.runtime.dt);
           if (pool.amount <= 0) depleted.push(type);
         }
       }
@@ -117,7 +118,7 @@ export default function (parentClass) {
     
     // Public methods for ACEs
     takeDamage(amount) {
-      if (this._invulnerable || this._isDead) return;
+      if (amount <= 0 || this._invulnerable || this._isDead) return;
       
       let remainingDamage = amount;
       
@@ -155,12 +156,14 @@ export default function (parentClass) {
         this._currentHealth = 0;
         this._isDead = true;
         this._trigger("OnDeath");
+        this._trigger("OnHealthChanged");
         
         if (this._destroyOnDeath) {
           this.instance.destroy();
         }
       } else {
         this._trigger("OnDamaged");
+        this._trigger("OnHealthChanged");
       }
     }
     
@@ -170,21 +173,35 @@ export default function (parentClass) {
       this._lastHeal = amount;
       this._currentHealth = Math.min(this._currentHealth + amount, this._maxHealth);
       this._trigger("OnHealed");
+      this._trigger("OnHealthChanged");
     }
     
     setHealth(amount) {
       if (this._isDead) return;
       
+      const oldHealth = this._currentHealth;
       const wasAlive = this._currentHealth > 0;
       this._currentHealth = Math.max(0, Math.min(amount, this._maxHealth));
       
+      if (this._currentHealth === oldHealth) return;
+      
       if (wasAlive && this._currentHealth <= 0) {
         this._isDead = true;
+        this._lastDamage = oldHealth - this._currentHealth;
         this._trigger("OnDeath");
+        this._trigger("OnHealthChanged");
         
         if (this._destroyOnDeath) {
           this.instance.destroy();
         }
+      } else if (this._currentHealth < oldHealth) {
+        this._lastDamage = oldHealth - this._currentHealth;
+        this._trigger("OnDamaged");
+        this._trigger("OnHealthChanged");
+      } else {
+        this._lastHeal = this._currentHealth - oldHealth;
+        this._trigger("OnHealed");
+        this._trigger("OnHealthChanged");
       }
     }
     
@@ -192,6 +209,7 @@ export default function (parentClass) {
       this._maxHealth = Math.max(1, amount);
       if (this._currentHealth > this._maxHealth) {
         this._currentHealth = this._maxHealth;
+        this._trigger("OnHealthChanged");
       }
     }
     
@@ -208,17 +226,29 @@ export default function (parentClass) {
       return this._healthAbsorptionRate;
     }
     
-    revive() {
+    revive(amount = -1) {
       this._isDead = false;
-      this._currentHealth = this._maxHealth;
+      this._currentHealth = (amount > 0) ? Math.min(amount, this._maxHealth) : this._maxHealth;
+      this._trigger("OnRevived");
+      this._trigger("OnHealthChanged");
     }
     
     addTempHealth(type, amount) {
-      this._getPool(type).amount += Math.max(0, amount);
+      if (amount <= 0) return;
+      this._getPool(type).amount += amount;
+      this._lastTriggerTempType = type;
+      this._trigger("OnTempHealthAdded");
     }
     
     setTempHealth(type, amount) {
-      this._getPool(type).amount = Math.max(0, amount);
+      const pool = this._getPool(type);
+      const newAmount = Math.max(0, amount);
+      const added = newAmount > pool.amount;
+      pool.amount = newAmount;
+      if (added) {
+        this._lastTriggerTempType = type;
+        this._trigger("OnTempHealthAdded");
+      }
     }
     
     clearTempHealth(type) {

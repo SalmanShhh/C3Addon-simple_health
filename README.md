@@ -1,15 +1,18 @@
 <img src="./src/icon.svg" width="100" /><br>
 # Simple Health
 <i>A complete health management behavior for Construct 3 with damage, healing, and death detection.</i> <br>
-### Version 1.2.0.2
+### Version 1.2.1.0
 
-[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.2.0.2.c3addon/salmanshh_simple_health-1.2.0.2.c3addon)
+[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.2.1.0.c3addon/salmanshh_simple_health-1.2.1.0.c3addon)
 <br>
 <sub> [See all releases](https://github.com/SalmanShhh/C3Addon-simple_health/releases) </sub> <br>
 
-#### What's New in 1.2.0.2
+#### What's New in 1.2.1.0
 **Added:**
-- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.
+- Add Revive Action
+- On Health Changed Condition
+- Trigger condition for Health pool Added.
+
 
 
 <sub>[View full changelog](#changelog)</sub>
@@ -57,7 +60,7 @@ npm run dev
 | Action | Description | Params
 | --- | --- | --- |
 | Heal | Increase health by the specified amount (up to max health). | Amount             *(number)* <br> |
-| Revive | Revive the instance and restore it to max health. |  |
+| Revive | Revive the instance. Use -1 to restore to max health, or specify an amount. | Amount             *(number)* <br> |
 | Set health | Set the instance's current health (clamped between 0 and max). | Amount             *(number)* <br> |
 | Set health absorption rate | Set the multiplier applied to damage that reaches real health. 1.0 = normal, 0.5 = 50% damage taken (resistance), 2.0 = double damage taken (vulnerability), 0 = immune. | Rate             *(number)* <br> |
 | Set invulnerable | Set whether the instance is invulnerable to damage. | Invulnerable             *(boolean)* <br> |
@@ -83,10 +86,13 @@ npm run dev
 | On damaged | Trigger when the instance takes damage. |  |
 | On death | Trigger when the instance dies. |  |
 | On healed | Trigger when the instance is healed. |  |
+| On health changed | Triggers whenever health changes for any reason (damage, healing, set health, revive, or max health clamp). |  |
+| On revived | Triggers when the instance is revived from death. |  |
 | Has any temp health | True if any temporary health pool has health remaining. |  |
 | Has temp health | True if a specific named temporary health pool has any health remaining. | Type *(string)* <br> |
 | Temp health pool is type | True if the temporary health pool that fired the last trigger matches the given type name. Use inside 'On temp health depleted' or 'On temp health absorbed damage' to filter by pool. | Type *(string)* <br> |
 | On temp health absorbed damage | Triggers when temporary health intercepts incoming damage (even partially). |  |
+| On temp health added | Triggers when temporary health is added to a pool. Use LastTempHealthType to identify which pool was affected. |  |
 | On temp health depleted | Triggers when temporary health reaches zero (from damage or time decay). |  |
 
 
@@ -110,6 +116,16 @@ npm run dev
 
 ---
 ## Changelog
+
+### Version 1.2.1.0
+
+**Added:**
+- Add Revive Action
+- On Health Changed Condition
+- Trigger condition for Health pool Added.
+
+
+---
 
 ### Version 1.2.0.2
 
