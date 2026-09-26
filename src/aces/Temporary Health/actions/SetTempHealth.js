@@ -1,22 +1,22 @@
 export const config = {
-  listName: "Set temp health",
-  displayText: "Set {0} temp health to {1}",
-  description: "Set a named temporary health pool to a specific value.",
+  listName: "Set health pool",
+  displayText: "{my}: Set health pool {0} to {1}",
+  description: "Set a named health pool to a specific amount.",
   isAsync: false,
   highlight: false,
   deprecated: false,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool (e.g. \"shield\", \"armour\").",
+      name: "Pool",
+      desc: "Name of the health pool (e.g. \"shield\", \"armour\").",
       type: "string",
       initialValue: '"shield"',
     },
     {
       id: "amount",
       name: "Amount",
-      desc: "The new temporary health value.",
+      desc: "The new pool health amount.",
       type: "number",
       initialValue: "50",
     },

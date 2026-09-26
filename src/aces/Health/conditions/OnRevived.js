@@ -1,6 +1,6 @@
 export const config = {
   listName: "On revived",
-  displayText: "On revived",
+  displayText: "{my} On revived",
   description: "Triggers when the instance is revived from death.",
   isTrigger: true,
   isInvertible: false,

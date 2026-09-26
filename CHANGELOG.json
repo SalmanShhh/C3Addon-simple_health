@@ -33,5 +33,10 @@
     "added": "- Add Revive Action\n- On Health Changed Condition\n- Trigger condition for Health pool Added.\n",
     "changed": "",
     "fixed": ""
+  },
+  "1.3.0.0": {
+    "added": "- Status Effects: named statuses (burn, poison, stun, regen...) timed in seconds or turns.\n- Status stacking with max stacks, reapply modes (refresh / extend / keep) and stacks lost per tick.\n- Periodic status damage and healing that flows through health pools and absorption rate.\n- Advance status turns action for turn-based games.\n- Status triggers: On status applied / reapplied / ticked / expired / removed, plus On any status applied / removed.\n- Status expressions: StatusStacks, StatusRemaining, StatusDuration, StatusCount, StatusByIndex, LastStatus, LastTickAmount, LastDamageStatus, LastHealStatus.\n- Clear Statuses on Death property.\n- New pool expressions: PoolHealth, PoolAbsorptionRate, PoolDecayRate, PoolPriority, LastPoolDamageAbsorbed, LastPoolName.",
+    "changed": "- \"Temporary Health\" is now called \"Health Pools\" (display names only, existing projects are unaffected).\n- Event sheet text now shows the object and behavior name ({my}).\n- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions. They keep working in existing projects.",
+    "fixed": ""
   }
 }

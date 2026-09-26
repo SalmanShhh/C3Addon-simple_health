@@ -1,22 +1,22 @@
 export const config = {
-  listName: "Set temp health decay rate",
-  displayText: "Set {0} temp health decay rate to {1} per second",
-  description: "Set how much a named temporary health pool drains per second. 0 disables decay.",
+  listName: "Set health pool decay rate",
+  displayText: "{my}: Set health pool {0} decay rate to {1} per second",
+  description: "Set how much a health pool drains per second. 0 disables decay.",
   isAsync: false,
   highlight: false,
   deprecated: true,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool.",
+      name: "Pool",
+      desc: "Name of the health pool.",
       type: "string",
       initialValue: '"shield"',
     },
     {
       id: "rate",
       name: "Rate",
-      desc: "Temporary health lost per second (0 = no decay).",
+      desc: "Pool health lost per second (0 = no decay).",
       type: "number",
       initialValue: "5",
     },

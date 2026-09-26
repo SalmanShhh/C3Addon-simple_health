@@ -1,6 +1,6 @@
 export const config = {
   listName: "Is dead",
-  displayText: "Is dead",
+  displayText: "{my} Is dead",
   description: "True if the instance is dead (health is 0).",
   isTrigger: false,
   isInvertible: true,

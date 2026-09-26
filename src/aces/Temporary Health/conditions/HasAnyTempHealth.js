@@ -1,7 +1,7 @@
 export const config = {
-  listName: "Has any temp health",
-  displayText: "Has any temp health",
-  description: "True if any temporary health pool has health remaining.",
+  listName: "Any health pool has health",
+  displayText: "{my} Any health pool has health",
+  description: "True if any health pool has health remaining.",
   isTrigger: false,
   isInvertible: true,
   params: [],

@@ -1,6 +1,6 @@
 export const config = {
   listName: "On damaged",
-  displayText: "On damaged",
+  displayText: "{my} On damaged",
   description: "Trigger when the instance takes damage.",
   isTrigger: true,
   isInvertible: false,

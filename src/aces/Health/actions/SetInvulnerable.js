@@ -1,6 +1,6 @@
 export const config = {
   listName: "Set invulnerable",
-  displayText: "Set invulnerable to {0}",
+  displayText: "{my}: Set invulnerable to {0}",
   description: "Set whether the instance is invulnerable to damage.",
   params: [
     {

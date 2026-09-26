@@ -1,13 +1,13 @@
 export const config = {
   returnType: "number",
-  description: "Damage absorption priority of the named pool. Lower numbers are consumed first. Returns 0 if the pool does not exist.",
+  description: "Deprecated: use PoolPriority. Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist.",
   highlight: false,
-  deprecated: false,
+  deprecated: true,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool.",
+      name: "Pool",
+      desc: "Name of the health pool.",
       type: "string",
     },
   ],

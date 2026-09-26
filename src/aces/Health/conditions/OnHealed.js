@@ -1,6 +1,6 @@
 export const config = {
   listName: "On healed",
-  displayText: "On healed",
+  displayText: "{my} On healed",
   description: "Trigger when the instance is healed.",
   isTrigger: true,
   isInvertible: false,

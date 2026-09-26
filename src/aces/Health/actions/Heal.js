@@ -1,6 +1,6 @@
 export const config = {
     listName: "Heal",
-    displayText: "Heal {0} health",
+    displayText: "{my}: Heal {0} health",
     description: "Increase health by the specified amount (up to max health).",
     isAsync: false,
     highlight: false,

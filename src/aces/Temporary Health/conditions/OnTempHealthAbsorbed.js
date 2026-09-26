@@ -1,7 +1,7 @@
 export const config = {
-  listName: "On temp health absorbed damage",
-  displayText: "On temp health absorbed damage",
-  description: "Triggers when temporary health intercepts incoming damage (even partially).",
+  listName: "On health pool absorbed damage",
+  displayText: "{my} On health pool absorbed damage",
+  description: "Triggers when a health pool absorbs incoming damage, even partially.",
   isTrigger: true,
   isInvertible: false,
   params: [],

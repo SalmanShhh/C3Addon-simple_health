@@ -1,7 +1,7 @@
 export const config = {
-  listName: "Clear all temp health",
-  displayText: "Clear all temp health pools",
-  description: "Remove all temporary health from every named pool.",
+  listName: "Clear all health pools",
+  displayText: "{my}: Clear all health pools",
+  description: "Empty every health pool on this instance.",
   isAsync: false,
   highlight: false,
   deprecated: false,

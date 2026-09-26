@@ -38,7 +38,10 @@ export const files = {
 };
 
 // categories that are not filled will use the folder name
-export const aceCategories = {};
+// Display names only — the folder name stays the category ID so existing projects are unaffected
+export const aceCategories = {
+  "Temporary Health": "Health Pools",
+};
 
 export const info = {
   // icon: "icon.svg",
@@ -104,6 +107,16 @@ export const properties = [
     desc: "Destroy the instance when it dies.",
     options: {
       initialValue: false,
+    },
+  },
+  // Appended in 1.3.0.0 — properties are read by index, keep new ones at the end
+  {
+    type: PROPERTY_TYPE.CHECK,
+    id: "clearStatusesOnDeath",
+    name: "Clear Statuses on Death",
+    desc: "Remove all active statuses when the instance dies.",
+    options: {
+      initialValue: true,
     },
   },
 ];

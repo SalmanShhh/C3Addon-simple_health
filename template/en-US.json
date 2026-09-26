@@ -9,7 +9,8 @@
         "help-url": "https://www.construct.net",
         "aceCategories": {
           "Health": "Health",
-          "Temporary Health": "Temporary Health"
+          "Status Effects": "Status Effects",
+          "Temporary Health": "Health Pools"
         },
         "properties": {
           "maxHealth": {
@@ -23,12 +24,16 @@
           "destroyOnDeath": {
             "name": "Destroy on Death",
             "desc": "Destroy the instance when it dies."
+          },
+          "clearStatusesOnDeath": {
+            "name": "Clear Statuses on Death",
+            "desc": "Remove all active statuses when the instance dies."
           }
         },
         "actions": {
           "Heal": {
             "list-name": "Heal",
-            "display-text": "Heal {0} health",
+            "display-text": "{my}: Heal {0} health",
             "description": "Increase health by the specified amount (up to max health).",
             "params": {
               "amount": {
@@ -39,7 +44,7 @@
           },
           "Revive": {
             "list-name": "Revive",
-            "display-text": "Revive instance (health: {0})",
+            "display-text": "{my}: Revive instance (health: {0})",
             "description": "Revive the instance. Use -1 to restore to max health, or specify an amount.",
             "params": {
               "amount": {
@@ -50,7 +55,7 @@
           },
           "SetHealth": {
             "list-name": "Set health",
-            "display-text": "Set health to {0}",
+            "display-text": "{my}: Set health to {0}",
             "description": "Set the instance's current health (clamped between 0 and max).",
             "params": {
               "amount": {
@@ -61,7 +66,7 @@
           },
           "SetHealthAbsorptionRate": {
             "list-name": "Set health absorption rate",
-            "display-text": "Set health absorption rate to {0}",
+            "display-text": "{my}: Set health absorption rate to {0}",
             "description": "Set the multiplier applied to damage that reaches real health. 1.0 = normal, 0.5 = 50% damage taken (resistance), 2.0 = double damage taken (vulnerability), 0 = immune.",
             "params": {
               "rate": {
@@ -72,7 +77,7 @@
           },
           "SetInvulnerable": {
             "list-name": "Set invulnerable",
-            "display-text": "Set invulnerable to {0}",
+            "display-text": "{my}: Set invulnerable to {0}",
             "description": "Set whether the instance is invulnerable to damage.",
             "params": {
               "state": {
@@ -83,7 +88,7 @@
           },
           "SetMaxHealth": {
             "list-name": "Set max health",
-            "display-text": "Set max health to {0}",
+            "display-text": "{my}: Set max health to {0}",
             "description": "Set the instance's maximum health (minimum 1).",
             "params": {
               "amount": {
@@ -94,7 +99,7 @@
           },
           "TakeDamage": {
             "list-name": "Take damage",
-            "display-text": "Take {0} damage",
+            "display-text": "{my}: Take {0} damage",
             "description": "Reduce health by the specified amount.",
             "params": {
               "amount": {
@@ -103,91 +108,232 @@
               }
             }
           },
+          "AdvanceStatusTurns": {
+            "list-name": "Advance status turns",
+            "display-text": "{my}: Advance statuses by {0} turn(s)",
+            "description": "Advance all turn-based statuses: tick, drain stacks and expire them.",
+            "params": {
+              "count": {
+                "name": "Turns",
+                "desc": "Number of turns to advance (whole number, at least 1)."
+              }
+            }
+          },
+          "ApplyStatus": {
+            "list-name": "Apply status",
+            "display-text": "{my}: Apply status {0} for {1} {2} with {3} stack(s)",
+            "description": "Apply or reapply a status for a duration in seconds or turns.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "duration": {
+                "name": "Duration",
+                "desc": "How long the status lasts, in the chosen unit. Use -1 for permanent."
+              },
+              "unit": {
+                "name": "Unit",
+                "desc": "Seconds count down automatically; turns only advance with 'Advance status turns'.",
+                "items": {
+                  "seconds": "seconds",
+                  "turns": "turns"
+                }
+              },
+              "stacks": {
+                "name": "Stacks",
+                "desc": "Number of stacks to add (whole number, at least 1)."
+              }
+            }
+          },
+          "ClearAllStatuses": {
+            "list-name": "Clear all statuses",
+            "display-text": "{my}: Clear all statuses",
+            "description": "Remove every active status, firing 'On status removed' for each.",
+            "params": {}
+          },
+          "RemoveStatus": {
+            "list-name": "Remove status",
+            "display-text": "{my}: Remove status {0}",
+            "description": "Remove a status immediately, firing 'On status removed'.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              }
+            }
+          },
+          "RemoveStatusStacks": {
+            "list-name": "Remove status stacks",
+            "display-text": "{my}: Remove {1} stack(s) of status {0}",
+            "description": "Remove stacks from a status. Reaching 0 stacks removes the status.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "count": {
+                "name": "Count",
+                "desc": "Number of stacks to remove."
+              }
+            }
+          },
+          "SetStatusPeriodic": {
+            "list-name": "Set status periodic",
+            "display-text": "{my}: Set status {0} to {1} {2} per stack every {3}",
+            "description": "Set the damage or healing a status applies on each tick.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "periodicType": {
+                "name": "Type",
+                "desc": "What each tick does. Damage goes through health pools and absorption rate.",
+                "items": {
+                  "none": "none",
+                  "damage": "damage",
+                  "heal": "heal"
+                }
+              },
+              "amountPerStack": {
+                "name": "Amount per stack",
+                "desc": "Amount per tick, multiplied by the current stacks."
+              },
+              "interval": {
+                "name": "Interval",
+                "desc": "Tick every N seconds or turns (matches the status unit). 0 = no ticks."
+              }
+            }
+          },
+          "SetStatusRemaining": {
+            "list-name": "Set status remaining",
+            "display-text": "{my}: Set status {0} remaining to {1}",
+            "description": "Set the seconds or turns left on an active status. 0 expires it, -1 makes it permanent.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "value": {
+                "name": "Remaining",
+                "desc": "Seconds or turns left (matches the status unit). 0 expires it, -1 = permanent."
+              }
+            }
+          },
+          "SetStatusStacking": {
+            "list-name": "Set status stacking",
+            "display-text": "{my}: Set status {0} stacking: max {1}, on reapply {2}, lose {3} stack(s) per tick",
+            "description": "Set how a status stacks and how its duration reacts to reapplying.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "maxStacks": {
+                "name": "Max stacks",
+                "desc": "Maximum stacks. -1 = unlimited."
+              },
+              "reapplyMode": {
+                "name": "On reapply",
+                "desc": "Refresh resets the duration, extend adds to it, keep leaves it unchanged.",
+                "items": {
+                  "refresh": "refresh",
+                  "extend": "extend",
+                  "keep": "keep"
+                }
+              },
+              "stacksLostPerTick": {
+                "name": "Stacks lost per tick",
+                "desc": "Stacks removed after each tick. 0 = stacks never drain."
+              }
+            }
+          },
           "AddTempHealth": {
-            "list-name": "Add temp health",
-            "display-text": "Add {1} to {0} temp health",
-            "description": "Add to a named temporary health pool.",
+            "list-name": "Add to health pool",
+            "display-text": "{my}: Add {1} to health pool {0}",
+            "description": "Add health to a named health pool.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+                "name": "Pool",
+                "desc": "Name of the health pool (e.g. \"shield\", \"armour\")."
               },
               "amount": {
                 "name": "Amount",
-                "desc": "The amount of temporary health to add."
+                "desc": "The amount of pool health to add."
               }
             }
           },
           "ClearAllTempHealth": {
-            "list-name": "Clear all temp health",
-            "display-text": "Clear all temp health pools",
-            "description": "Remove all temporary health from every named pool.",
+            "list-name": "Clear all health pools",
+            "display-text": "{my}: Clear all health pools",
+            "description": "Empty every health pool on this instance.",
             "params": {}
           },
           "ClearTempHealth": {
-            "list-name": "Clear temp health",
-            "display-text": "Clear {0} temp health",
-            "description": "Remove all temporary health from a named pool.",
+            "list-name": "Clear health pool",
+            "display-text": "{my}: Clear health pool {0}",
+            "description": "Empty a named health pool.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool to clear."
+                "name": "Pool",
+                "desc": "Name of the health pool to clear."
               }
             }
           },
           "SetTempHealth": {
-            "list-name": "Set temp health",
-            "display-text": "Set {0} temp health to {1}",
-            "description": "Set a named temporary health pool to a specific value.",
+            "list-name": "Set health pool",
+            "display-text": "{my}: Set health pool {0} to {1}",
+            "description": "Set a named health pool to a specific amount.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+                "name": "Pool",
+                "desc": "Name of the health pool (e.g. \"shield\", \"armour\")."
               },
               "amount": {
                 "name": "Amount",
-                "desc": "The new temporary health value."
+                "desc": "The new pool health amount."
               }
             }
           },
           "SetTempHealthAbsorptionRate": {
-            "list-name": "Set temp health absorption rate",
-            "display-text": "Set {0} temp health absorption rate to {1}",
-            "description": "Set how much of a named pool is consumed per 1 point of incoming damage. 1.0 = equal, 0.5 = armour-style (1 dmg costs 0.5 armour), 2.0 = fragile shield.",
+            "list-name": "Set health pool absorption rate",
+            "display-text": "{my}: Set health pool {0} absorption rate to {1}",
+            "description": "Set pool health lost per 1 damage. 1 = equal, 0.5 = armour-style, 2 = fragile.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               },
               "rate": {
                 "name": "Rate",
-                "desc": "Temp health cost per 1 point of damage (e.g. 0.5 = armour-style)."
+                "desc": "Pool health lost per 1 point of damage (e.g. 0.5 = armour-style)."
               }
             }
           },
           "SetTempHealthDecayRate": {
-            "list-name": "Set temp health decay rate",
-            "display-text": "Set {0} temp health decay rate to {1} per second",
-            "description": "Set how much a named temporary health pool drains per second. 0 disables decay.",
+            "list-name": "Set health pool decay rate",
+            "display-text": "{my}: Set health pool {0} decay rate to {1} per second",
+            "description": "Set how much a health pool drains per second. 0 disables decay.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               },
               "rate": {
                 "name": "Rate",
-                "desc": "Temporary health lost per second (0 = no decay)."
+                "desc": "Pool health lost per second (0 = no decay)."
               }
             }
           },
           "SetTempHealthPriority": {
-            "list-name": "Set temp health pool priority",
-            "display-text": "Set {0} temp health pool priority to {1}",
-            "description": "Set the damage-absorption priority for a named pool. Lower numbers are consumed first. Default is 0. Use this to reorder existing pools without changing their amounts or rates.",
+            "list-name": "Set health pool priority",
+            "display-text": "{my}: Set health pool {0} priority to {1}",
+            "description": "Set a pool's absorption priority. Lower numbers absorb damage first. Default 0.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               },
               "priority": {
                 "name": "Priority",
@@ -196,44 +342,44 @@
             }
           },
           "SetTempHealthRates": {
-            "list-name": "Set temp health rates",
-            "display-text": "Set {0} temp health | decay {1}s | absorption {2}",
-            "description": "Set both the decay rate (HP lost per second) and absorption rate (temp HP cost per 1 damage) for a named pool in one action.",
+            "list-name": "Set health pool rates",
+            "display-text": "{my}: Set health pool {0} rates: decay {1}/s, absorption {2}",
+            "description": "Set a health pool's decay rate and absorption rate in one action.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               },
               "decayRate": {
                 "name": "Decay rate",
-                "desc": "Temporary health lost per second (0 = no decay)."
+                "desc": "Pool health lost per second (0 = no decay)."
               },
               "absorptionRate": {
                 "name": "Absorption rate",
-                "desc": "Temp health cost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
+                "desc": "Pool health lost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
               }
             }
           },
           "SetupTempHealthPool": {
-            "list-name": "Setup temp health pool",
-            "display-text": "Setup {0} temp health | amount {1} | decay {2}s | absorption {3} | priority {4}",
-            "description": "Fully configure a named temporary health pool in one action — sets the amount, decay rate, absorption rate, and priority together.",
+            "list-name": "Setup health pool",
+            "display-text": "{my}: Setup health pool {0}: amount {1}, decay {2}/s, absorption {3}, priority {4}",
+            "description": "Fully configure a health pool: amount, decay rate, absorption rate and priority.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool (e.g. \"shield\", \"armour\")."
+                "name": "Pool",
+                "desc": "Name of the health pool (e.g. \"shield\", \"armour\")."
               },
               "amount": {
                 "name": "Amount",
-                "desc": "The temporary health value to set."
+                "desc": "The pool health amount to set."
               },
               "decayRate": {
                 "name": "Decay rate",
-                "desc": "Temporary health lost per second (0 = no decay)."
+                "desc": "Pool health lost per second (0 = no decay)."
               },
               "absorptionRate": {
                 "name": "Absorption rate",
-                "desc": "Temp health cost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
+                "desc": "Pool health lost per 1 point of damage (1.0 = equal, 0.5 = armour-style)."
               },
               "priority": {
                 "name": "Priority",
@@ -245,90 +391,174 @@
         "conditions": {
           "IsDead": {
             "list-name": "Is dead",
-            "display-text": "Is dead",
+            "display-text": "{my} Is dead",
             "description": "True if the instance is dead (health is 0).",
             "params": {}
           },
           "IsInvulnerable": {
             "list-name": "Is invulnerable",
-            "display-text": "Is invulnerable",
+            "display-text": "{my} Is invulnerable",
             "description": "True if the instance is currently invulnerable to damage.",
             "params": {}
           },
           "OnDamaged": {
             "list-name": "On damaged",
-            "display-text": "On damaged",
+            "display-text": "{my} On damaged",
             "description": "Trigger when the instance takes damage.",
             "params": {}
           },
           "OnDeath": {
             "list-name": "On death",
-            "display-text": "On death",
+            "display-text": "{my} On death",
             "description": "Trigger when the instance dies.",
             "params": {}
           },
           "OnHealed": {
             "list-name": "On healed",
-            "display-text": "On healed",
+            "display-text": "{my} On healed",
             "description": "Trigger when the instance is healed.",
             "params": {}
           },
           "OnHealthChanged": {
             "list-name": "On health changed",
-            "display-text": "On health changed",
+            "display-text": "{my} On health changed",
             "description": "Triggers whenever health changes for any reason (damage, healing, set health, revive, or max health clamp).",
             "params": {}
           },
           "OnRevived": {
             "list-name": "On revived",
-            "display-text": "On revived",
+            "display-text": "{my} On revived",
             "description": "Triggers when the instance is revived from death.",
             "params": {}
           },
+          "HasAnyStatus": {
+            "list-name": "Has any status",
+            "display-text": "{my} Has any status",
+            "description": "True if any status is currently active.",
+            "params": {}
+          },
+          "HasStatus": {
+            "list-name": "Has status",
+            "display-text": "{my} Has status {0}",
+            "description": "True if the status is currently active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to check. Not case-sensitive."
+              }
+            }
+          },
+          "OnAnyStatusApplied": {
+            "list-name": "On any status applied",
+            "display-text": "{my} On any status applied",
+            "description": "Triggers when any status becomes active. Use LastStatus for its name.",
+            "params": {}
+          },
+          "OnAnyStatusRemoved": {
+            "list-name": "On any status removed",
+            "display-text": "{my} On any status removed",
+            "description": "Triggers whenever any status ends. Use LastStatus for its name.",
+            "params": {}
+          },
+          "OnStatusApplied": {
+            "list-name": "On status applied",
+            "display-text": "{my} On status {0} applied",
+            "description": "Triggers when a status becomes active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to listen for. Not case-sensitive."
+              }
+            }
+          },
+          "OnStatusExpired": {
+            "list-name": "On status expired",
+            "display-text": "{my} On status {0} expired",
+            "description": "Triggers when a status runs out of time or stacks.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to listen for. Not case-sensitive."
+              }
+            }
+          },
+          "OnStatusReapplied": {
+            "list-name": "On status reapplied",
+            "display-text": "{my} On status {0} reapplied",
+            "description": "Triggers when a status is applied while already active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to listen for. Not case-sensitive."
+              }
+            }
+          },
+          "OnStatusRemoved": {
+            "list-name": "On status removed",
+            "display-text": "{my} On status {0} removed",
+            "description": "Triggers whenever a status ends for any reason. Use for cleanup.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to listen for. Not case-sensitive."
+              }
+            }
+          },
+          "OnStatusTicked": {
+            "list-name": "On status ticked",
+            "display-text": "{my} On status {0} ticked",
+            "description": "Triggers after each tick of a status. Use LastTickAmount for the tick amount.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status to listen for. Not case-sensitive."
+              }
+            }
+          },
           "HasAnyTempHealth": {
-            "list-name": "Has any temp health",
-            "display-text": "Has any temp health",
-            "description": "True if any temporary health pool has health remaining.",
+            "list-name": "Any health pool has health",
+            "display-text": "{my} Any health pool has health",
+            "description": "True if any health pool has health remaining.",
             "params": {}
           },
           "HasTempHealth": {
-            "list-name": "Has temp health",
-            "display-text": "{0} temp health pool has health",
-            "description": "True if a specific named temporary health pool has any health remaining.",
+            "list-name": "Health pool has health",
+            "display-text": "{my} Health pool {0} has health",
+            "description": "True if the named health pool has health remaining.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool to check."
+                "name": "Pool",
+                "desc": "Name of the health pool to check."
               }
             }
           },
           "IsTempHealthType": {
-            "list-name": "Temp health pool is type",
-            "display-text": "Temp health pool is {0}",
-            "description": "True if the temporary health pool that fired the last trigger matches the given type name. Use inside 'On temp health depleted' or 'On temp health absorbed damage' to filter by pool.",
+            "list-name": "Is health pool",
+            "display-text": "{my} Triggering health pool is {0}",
+            "description": "True if the pool that fired the last pool trigger has this name.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "The pool name to match against the last triggered pool."
+                "name": "Pool",
+                "desc": "The pool name to match against the pool that fired the last trigger."
               }
             }
           },
           "OnTempHealthAbsorbed": {
-            "list-name": "On temp health absorbed damage",
-            "display-text": "On temp health absorbed damage",
-            "description": "Triggers when temporary health intercepts incoming damage (even partially).",
+            "list-name": "On health pool absorbed damage",
+            "display-text": "{my} On health pool absorbed damage",
+            "description": "Triggers when a health pool absorbs incoming damage, even partially.",
             "params": {}
           },
           "OnTempHealthAdded": {
-            "list-name": "On temp health added",
-            "display-text": "On temp health added",
-            "description": "Triggers when temporary health is added to a pool. Use LastTempHealthType to identify which pool was affected.",
+            "list-name": "On health pool increased",
+            "display-text": "{my} On health pool increased",
+            "description": "Triggers when health is added to a pool. Use LastPoolName for the pool.",
             "params": {}
           },
           "OnTempHealthDepleted": {
-            "list-name": "On temp health depleted",
-            "display-text": "On temp health depleted",
-            "description": "Triggers when temporary health reaches zero (from damage or time decay).",
+            "list-name": "On health pool depleted",
+            "display-text": "{my} On health pool depleted",
+            "description": "Triggers when a health pool reaches zero, from damage or decay.",
             "params": {}
           }
         },
@@ -363,53 +593,168 @@
             "description": "Maximum health of the instance.",
             "params": {}
           },
+          "LastDamageStatus": {
+            "translated-name": "LastDamageStatus",
+            "description": "Name of the status that caused LastDamage. Empty if the damage was direct.",
+            "params": {}
+          },
+          "LastHealStatus": {
+            "translated-name": "LastHealStatus",
+            "description": "Name of the status that caused LastHeal. Empty if the heal was direct.",
+            "params": {}
+          },
+          "LastStatus": {
+            "translated-name": "LastStatus",
+            "description": "Name of the status that fired the most recent status trigger.",
+            "params": {}
+          },
+          "LastTickAmount": {
+            "translated-name": "LastTickAmount",
+            "description": "Amount the most recent status tick tried to apply, before health pools and absorption.",
+            "params": {}
+          },
+          "StatusByIndex": {
+            "translated-name": "StatusByIndex",
+            "description": "Name of the active status at a 0-based index, in the order they became active.",
+            "params": {
+              "index": {
+                "name": "Index",
+                "desc": "0-based index, from 0 to StatusCount - 1."
+              }
+            }
+          },
+          "StatusCount": {
+            "translated-name": "StatusCount",
+            "description": "Number of active statuses.",
+            "params": {}
+          },
+          "StatusDuration": {
+            "translated-name": "StatusDuration",
+            "description": "Duration the status was last applied with. -1 if permanent, 0 if not active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status. Not case-sensitive."
+              }
+            }
+          },
+          "StatusRemaining": {
+            "translated-name": "StatusRemaining",
+            "description": "Seconds or turns left on a status. -1 if permanent, 0 if not active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status. Not case-sensitive."
+              }
+            }
+          },
+          "StatusStacks": {
+            "translated-name": "StatusStacks",
+            "description": "Current stacks of a status. 0 if not active.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status. Not case-sensitive."
+              }
+            }
+          },
+          "LastPoolDamageAbsorbed": {
+            "translated-name": "LastPoolDamageAbsorbed",
+            "description": "Incoming damage absorbed by the pool that fired the last pool trigger.",
+            "params": {}
+          },
+          "LastPoolName": {
+            "translated-name": "LastPoolName",
+            "description": "Name of the health pool that fired the most recent pool trigger.",
+            "params": {}
+          },
           "LastTempDamageAbsorbed": {
             "translated-name": "LastTempDamageAbsorbed",
-            "description": "The amount of incoming damage intercepted by temporary health on the last hit.",
+            "description": "Deprecated: use LastPoolDamageAbsorbed. Incoming damage absorbed by the pool that fired the last pool trigger.",
             "params": {}
           },
           "LastTempHealthType": {
             "translated-name": "LastTempHealthType",
-            "description": "The name of the temporary health pool that fired the most recent 'On temp health depleted' or 'On temp health absorbed damage' trigger.",
+            "description": "Deprecated: use LastPoolName. Name of the health pool that fired the most recent pool trigger.",
             "params": {}
+          },
+          "PoolAbsorptionRate": {
+            "translated-name": "PoolAbsorptionRate",
+            "description": "Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style.",
+            "params": {
+              "type": {
+                "name": "Pool",
+                "desc": "Name of the health pool."
+              }
+            }
+          },
+          "PoolDecayRate": {
+            "translated-name": "PoolDecayRate",
+            "description": "Pool health lost per second for a named pool.",
+            "params": {
+              "type": {
+                "name": "Pool",
+                "desc": "Name of the health pool."
+              }
+            }
+          },
+          "PoolHealth": {
+            "translated-name": "PoolHealth",
+            "description": "Current health of a named pool.",
+            "params": {
+              "type": {
+                "name": "Pool",
+                "desc": "Name of the health pool."
+              }
+            }
+          },
+          "PoolPriority": {
+            "translated-name": "PoolPriority",
+            "description": "Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist.",
+            "params": {
+              "type": {
+                "name": "Pool",
+                "desc": "Name of the health pool."
+              }
+            }
           },
           "TempHealth": {
             "translated-name": "TempHealth",
-            "description": "Current temporary health of a named pool.",
+            "description": "Deprecated: use PoolHealth. Current health of a named pool.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               }
             }
           },
           "TempHealthAbsorptionRate": {
             "translated-name": "TempHealthAbsorptionRate",
-            "description": "Temp health cost per 1 point of incoming damage for a named pool (absorption rate). 1.0 = equal, 0.5 = armour-style.",
+            "description": "Deprecated: use PoolAbsorptionRate. Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               }
             }
           },
           "TempHealthDecayRate": {
             "translated-name": "TempHealthDecayRate",
-            "description": "Temporary health lost per second for a named pool (time-based decay rate).",
+            "description": "Deprecated: use PoolDecayRate. Pool health lost per second for a named pool.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               }
             }
           },
           "TempHealthPriority": {
             "translated-name": "TempHealthPriority",
-            "description": "Damage absorption priority of the named pool. Lower numbers are consumed first. Returns 0 if the pool does not exist.",
+            "description": "Deprecated: use PoolPriority. Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist.",
             "params": {
               "type": {
-                "name": "Type",
-                "desc": "Name of the temporary health pool."
+                "name": "Pool",
+                "desc": "Name of the health pool."
               }
             }
           }

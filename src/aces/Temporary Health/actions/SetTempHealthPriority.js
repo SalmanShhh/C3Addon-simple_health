@@ -1,15 +1,15 @@
 export const config = {
-  listName: "Set temp health pool priority",
-  displayText: "Set {0} temp health pool priority to {1}",
-  description: "Set the damage-absorption priority for a named pool. Lower numbers are consumed first. Default is 0. Use this to reorder existing pools without changing their amounts or rates.",
+  listName: "Set health pool priority",
+  displayText: "{my}: Set health pool {0} priority to {1}",
+  description: "Set a pool's absorption priority. Lower numbers absorb damage first. Default 0.",
   isAsync: false,
   highlight: false,
   deprecated: false,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool.",
+      name: "Pool",
+      desc: "Name of the health pool.",
       type: "string",
       initialValue: '"shield"',
     },

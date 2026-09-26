@@ -1,7 +1,7 @@
 export const config = {
-  listName: "On temp health depleted",
-  displayText: "On temp health depleted",
-  description: "Triggers when temporary health reaches zero (from damage or time decay).",
+  listName: "On health pool depleted",
+  displayText: "{my} On health pool depleted",
+  description: "Triggers when a health pool reaches zero, from damage or decay.",
   isTrigger: true,
   isInvertible: false,
   params: [],

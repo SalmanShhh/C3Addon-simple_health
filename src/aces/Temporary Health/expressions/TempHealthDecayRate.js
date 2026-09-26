@@ -1,13 +1,13 @@
 export const config = {
   returnType: "number",
-  description: "Temporary health lost per second for a named pool (time-based decay rate).",
+  description: "Deprecated: use PoolDecayRate. Pool health lost per second for a named pool.",
   highlight: false,
-  deprecated: false,
+  deprecated: true,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool.",
+      name: "Pool",
+      desc: "Name of the health pool.",
       type: "string",
     },
   ],

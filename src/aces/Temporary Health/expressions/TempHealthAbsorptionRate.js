@@ -1,13 +1,13 @@
 export const config = {
   returnType: "number",
-  description: "Temp health cost per 1 point of incoming damage for a named pool (absorption rate). 1.0 = equal, 0.5 = armour-style.",
+  description: "Deprecated: use PoolAbsorptionRate. Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style.",
   highlight: false,
-  deprecated: false,
+  deprecated: true,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool.",
+      name: "Pool",
+      desc: "Name of the health pool.",
       type: "string",
     },
   ],

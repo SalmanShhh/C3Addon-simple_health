@@ -1,15 +1,15 @@
 export const config = {
-  listName: "Clear temp health",
-  displayText: "Clear {0} temp health",
-  description: "Remove all temporary health from a named pool.",
+  listName: "Clear health pool",
+  displayText: "{my}: Clear health pool {0}",
+  description: "Empty a named health pool.",
   isAsync: false,
   highlight: false,
   deprecated: false,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool to clear.",
+      name: "Pool",
+      desc: "Name of the health pool to clear.",
       type: "string",
       initialValue: '"shield"',
     },

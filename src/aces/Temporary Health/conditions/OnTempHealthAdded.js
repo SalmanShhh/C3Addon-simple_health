@@ -1,7 +1,7 @@
 export const config = {
-  listName: "On temp health added",
-  displayText: "On temp health added",
-  description: "Triggers when temporary health is added to a pool. Use LastTempHealthType to identify which pool was affected.",
+  listName: "On health pool increased",
+  displayText: "{my} On health pool increased",
+  description: "Triggers when health is added to a pool. Use LastPoolName for the pool.",
   isTrigger: true,
   isInvertible: false,
   params: [],

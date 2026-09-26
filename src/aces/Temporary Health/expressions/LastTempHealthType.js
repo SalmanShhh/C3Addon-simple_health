@@ -1,8 +1,8 @@
 export const config = {
   returnType: "string",
-  description: "The name of the temporary health pool that fired the most recent 'On temp health depleted' or 'On temp health absorbed damage' trigger.",
+  description: "Deprecated: use LastPoolName. Name of the health pool that fired the most recent pool trigger.",
   highlight: false,
-  deprecated: false,
+  deprecated: true,
   params: [],
 };
 

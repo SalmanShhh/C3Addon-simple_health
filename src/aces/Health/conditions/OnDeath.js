@@ -1,6 +1,6 @@
 export const config = {
   listName: "On death",
-  displayText: "On death",
+  displayText: "{my} On death",
   description: "Trigger when the instance dies.",
   isTrigger: true,
   isInvertible: false,

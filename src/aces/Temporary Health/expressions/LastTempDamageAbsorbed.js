@@ -1,8 +1,8 @@
 export const config = {
   returnType: "number",
-  description: "The amount of incoming damage intercepted by temporary health on the last hit.",
+  description: "Deprecated: use LastPoolDamageAbsorbed. Incoming damage absorbed by the pool that fired the last pool trigger.",
   highlight: false,
-  deprecated: false,
+  deprecated: true,
   params: [],
 };
 

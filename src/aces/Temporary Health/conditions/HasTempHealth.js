@@ -1,14 +1,14 @@
 export const config = {
-  listName: "Has temp health",
-  displayText: "{0} temp health pool has health",
-  description: "True if a specific named temporary health pool has any health remaining.",
+  listName: "Health pool has health",
+  displayText: "{my} Health pool {0} has health",
+  description: "True if the named health pool has health remaining.",
   isTrigger: false,
   isInvertible: true,
   params: [
     {
       id: "type",
-      name: "Type",
-      desc: "Name of the temporary health pool to check.",
+      name: "Pool",
+      desc: "Name of the health pool to check.",
       type: "string",
       initialValue: '"shield"',
     },

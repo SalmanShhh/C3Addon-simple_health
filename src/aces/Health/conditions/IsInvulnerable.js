@@ -1,6 +1,6 @@
 export const config = {
   listName: "Is invulnerable",
-  displayText: "Is invulnerable",
+  displayText: "{my} Is invulnerable",
   description: "True if the instance is currently invulnerable to damage.",
   isTrigger: false,
   isInvertible: true,

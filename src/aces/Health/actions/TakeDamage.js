@@ -1,6 +1,6 @@
 export const config = {
   listName: "Take damage",
-  displayText: "Take {0} damage",
+  displayText: "{my}: Take {0} damage",
   description: "Reduce health by the specified amount.",
   params: [
     {

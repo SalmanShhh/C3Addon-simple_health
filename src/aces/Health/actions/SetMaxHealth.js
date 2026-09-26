@@ -1,6 +1,6 @@
 export const config = {
   listName: "Set max health",
-  displayText: "Set max health to {0}",
+  displayText: "{my}: Set max health to {0}",
   description: "Set the instance's maximum health (minimum 1).",
   params: [
     {
