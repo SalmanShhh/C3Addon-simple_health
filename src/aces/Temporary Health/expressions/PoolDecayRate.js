@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Pool health lost per second for a named pool.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

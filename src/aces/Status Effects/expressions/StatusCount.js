@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Number of active statuses.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [],
 };
 

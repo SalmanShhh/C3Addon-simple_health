@@ -2,7 +2,7 @@ export const config = {
   returnType: "string",
   description: "Name of the status that fired the most recent status trigger.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [],
 };
 

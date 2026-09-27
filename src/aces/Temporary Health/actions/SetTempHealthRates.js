@@ -4,7 +4,7 @@ export const config = {
   description: "Set a health pool's decay rate and absorption rate in one action.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

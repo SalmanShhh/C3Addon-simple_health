@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Current stacks of a status. 0 if not active.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "name",

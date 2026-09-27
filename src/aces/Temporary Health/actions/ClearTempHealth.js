@@ -4,7 +4,7 @@ export const config = {
   description: "Empty a named health pool.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

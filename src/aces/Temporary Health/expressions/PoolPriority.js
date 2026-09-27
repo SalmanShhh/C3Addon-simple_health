@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

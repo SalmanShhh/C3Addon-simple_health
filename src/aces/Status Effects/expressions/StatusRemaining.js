@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Seconds or turns left on a status. -1 if permanent, 0 if not active.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "name",

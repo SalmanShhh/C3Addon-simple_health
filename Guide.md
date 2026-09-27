@@ -635,8 +635,8 @@ Event: On start of layout
 | **Add to health pool** | pool, amount | Add to a pool's amount (creates the pool with default rates if new). |
 | **Set health pool** | pool, amount | Set a pool's amount to an exact value. |
 | **Set health pool rates** | pool, decay rate, absorption rate | Set both rates without changing the amount. |
-| **Set health pool decay rate** | pool, rate | Set how much the pool drains per second. |
-| **Set health pool absorption rate** | pool, rate | Set pool health spent per 1 point of damage. |
+| **Set health pool decay rate** | pool, rate | Deprecated: use `Set health pool rates`. Hidden from the picker; existing events keep working. |
+| **Set health pool absorption rate** | pool, rate | Deprecated: use `Set health pool rates`. Hidden from the picker; existing events keep working. |
 | **Set health pool priority** | pool, priority | Change the absorption order without touching amount or rates. |
 | **Clear health pool** | pool | Empty one pool. |
 | **Clear all health pools** | none | Empty every pool. |
@@ -1562,4 +1562,4 @@ Other changes to be aware of:
 
 - Event sheet rows now show the object and behavior name first, for example `Player (SimpleHealth): Take 10 damage`.
 - The new **Clear Statuses on Death** property defaults to on. It has no effect until you use statuses.
-- Old expressions are marked deprecated in the addon but may still appear in the expression picker, labelled "Deprecated: use ...". Prefer the new names in new events.
+- Deprecated ACEs are now hidden from the pickers. Events that already use them keep working. This covers the old `Temp...` expressions and the `Set health pool decay rate` / `Set health pool absorption rate` actions (deprecated since 1.2.0.0; use `Set health pool rates`).

@@ -4,7 +4,7 @@ export const config = {
   description: "Set the multiplier applied to damage that reaches real health. 1.0 = normal, 0.5 = 50% damage taken (resistance), 2.0 = double damage taken (vulnerability), 0 = immune.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "rate",

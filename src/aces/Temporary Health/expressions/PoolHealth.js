@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Current health of a named pool.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

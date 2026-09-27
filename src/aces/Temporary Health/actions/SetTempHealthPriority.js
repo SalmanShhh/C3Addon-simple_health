@@ -4,7 +4,7 @@ export const config = {
   description: "Set a pool's absorption priority. Lower numbers absorb damage first. Default 0.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

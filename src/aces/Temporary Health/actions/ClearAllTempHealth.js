@@ -4,7 +4,7 @@ export const config = {
   description: "Empty every health pool on this instance.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [],
 };
 

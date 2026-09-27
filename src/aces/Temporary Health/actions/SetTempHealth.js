@@ -4,7 +4,7 @@ export const config = {
   description: "Set a named health pool to a specific amount.",
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "type",

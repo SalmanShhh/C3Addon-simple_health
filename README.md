@@ -21,7 +21,8 @@
 **Changed:**
 - "Temporary Health" is now called "Health Pools" (display names only, existing projects are unaffected).
 - Event sheet text now shows the object and behavior name ({my}).
-- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions. They keep working in existing projects.
+- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions.
+- Deprecated ACEs are now hidden from the pickers, including Set health pool decay rate and Set health pool absorption rate (deprecated since 1.2.0.0; use Set health pool rates). Existing events keep working.
 
 
 <sub>[View full changelog](#changelog)</sub>
@@ -174,7 +175,8 @@ npm run dev
 **Changed:**
 - "Temporary Health" is now called "Health Pools" (display names only, existing projects are unaffected).
 - Event sheet text now shows the object and behavior name ({my}).
-- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions. They keep working in existing projects.
+- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions.
+- Deprecated ACEs are now hidden from the pickers, including Set health pool decay rate and Set health pool absorption rate (deprecated since 1.2.0.0; use Set health pool rates). Existing events keep working.
 
 ---
 

@@ -2,7 +2,7 @@ export const config = {
   returnType: "string",
   description: "Name of the active status at a 0-based index, in the order they became active.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [
     {
       id: "index",

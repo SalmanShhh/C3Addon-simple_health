@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Deprecated: use PoolAbsorptionRate. Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style.",
   highlight: false,
-  deprecated: true,
+  isDeprecated: true,
   params: [
     {
       id: "type",

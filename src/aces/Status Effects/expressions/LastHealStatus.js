@@ -2,7 +2,7 @@ export const config = {
   returnType: "string",
   description: "Name of the status that caused LastHeal. Empty if the heal was direct.",
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
   params: [],
 };
 

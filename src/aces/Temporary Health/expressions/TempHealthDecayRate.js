@@ -2,7 +2,7 @@ export const config = {
   returnType: "number",
   description: "Deprecated: use PoolDecayRate. Pool health lost per second for a named pool.",
   highlight: false,
-  deprecated: true,
+  isDeprecated: true,
   params: [
     {
       id: "type",

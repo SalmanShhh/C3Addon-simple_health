@@ -20,7 +20,7 @@ export const config = {
   ],
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
 };
 
 export const expose = true;

@@ -4,7 +4,7 @@ export const config = {
   description: "Set how much a health pool drains per second. 0 disables decay.",
   isAsync: false,
   highlight: false,
-  deprecated: true,
+  isDeprecated: true,
   params: [
     {
       id: "type",

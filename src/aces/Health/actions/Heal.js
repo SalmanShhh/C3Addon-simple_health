@@ -4,7 +4,7 @@ export const config = {
     description: "Increase health by the specified amount (up to max health).",
     isAsync: false,
     highlight: false,
-    deprecated: false,
+    isDeprecated: false,
     params: [
         {
             id: "amount",

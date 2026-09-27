@@ -4,7 +4,7 @@ export const config = {
   description: "Set pool health lost per 1 damage. 1 = equal, 0.5 = armour-style, 2 = fragile.",
   isAsync: false,
   highlight: false,
-  deprecated: true,
+  isDeprecated: true,
   params: [
     {
       id: "type",

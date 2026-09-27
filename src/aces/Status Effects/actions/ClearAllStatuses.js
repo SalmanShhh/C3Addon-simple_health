@@ -5,7 +5,7 @@ export const config = {
   params: [],
   isAsync: false,
   highlight: false,
-  deprecated: false,
+  isDeprecated: false,
 };
 
 export const expose = true;
