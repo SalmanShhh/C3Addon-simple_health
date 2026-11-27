@@ -7,26 +7,6 @@
 <br>
 <sub> [See all releases](https://github.com/SalmanShhh/C3Addon-simple_health/releases) </sub> <br>
 
-#### What's New in 1.3.0.0
-**Added:**
-- Status Effects: named statuses (burn, poison, stun, regen...) timed in seconds or turns.
-- Status stacking with max stacks, reapply modes (refresh / extend / keep) and stacks lost per tick.
-- Periodic status damage and healing that flows through health pools and absorption rate.
-- Advance status turns action for turn-based games.
-- Status triggers: On status applied / reapplied / ticked / expired / removed, plus On any status applied / removed.
-- Status expressions: StatusStacks, StatusRemaining, StatusDuration, StatusCount, StatusByIndex, LastStatus, LastTickAmount, LastDamageStatus, LastHealStatus.
-- Clear Statuses on Death property.
-- New pool expressions: PoolHealth, PoolAbsorptionRate, PoolDecayRate, PoolPriority, LastPoolDamageAbsorbed, LastPoolName.
-
-**Changed:**
-- "Temporary Health" is now called "Health Pools" (display names only, existing projects are unaffected).
-- Event sheet text now shows the object and behavior name ({my}).
-- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions.
-- Deprecated ACEs are now hidden from the pickers, including Set health pool decay rate and Set health pool absorption rate (deprecated since 1.2.0.0; use Set health pool rates). Existing events keep working.
-
-
-<sub>[View full changelog](#changelog)</sub>
-
 ---
 <b><u>Author:</u></b> SalmanShh <br>
 <sub>Made using [CAW](https://marketplace.visualstudio.com/items?itemName=skymen.caw) </sub><br>
@@ -55,15 +35,20 @@ npm run dev
 ```
 
 ## Examples Files
+| Description | Download |
+| --- | --- |
+| simple health example | [<img src="https://placehold.co/120x30/4493f8/FFF?text=Download&font=montserrat" width="120"/>](https://github.com/SalmanShhh/C3Addon-simple_health/raw/refs/heads/main/examples/simple%20health%20example.c3p) |
 
 ---
 ## Properties
 | Property Name | Description | Type |
 | --- | --- | --- |
+| Debug Mode | Write health events, and actions that were ignored, to the browser console to help find mistakes in events. Turn off for release. | check |
 | Max Health | Initial maximum health for instances with this behavior. | float |
 | Invulnerable | Start instances invulnerable to damage. | check |
 | Destroy on Death | Destroy the instance when it dies. | check |
 | Clear Statuses on Death | Remove all active statuses when the instance dies. | check |
+| Enabled | When disabled, damage, healing and new statuses are ignored, and pool decay and status timers pause. | check |
 
 
 ---
@@ -72,6 +57,7 @@ npm run dev
 | --- | --- | --- |
 | Heal | Increase health by the specified amount (up to max health). | Amount             *(number)* <br> |
 | Revive | Revive the instance. Use -1 to restore to max health, or specify an amount. | Amount             *(number)* <br> |
+| Set enabled | Enable or disable the behavior. Disabled ignores damage, healing and new statuses, and pauses timers. | State             *(combo)* <br> |
 | Set health | Set the instance's current health (clamped between 0 and max). | Amount             *(number)* <br> |
 | Set health absorption rate | Set the multiplier applied to damage that reaches real health. 1.0 = normal, 0.5 = 50% damage taken (resistance), 2.0 = double damage taken (vulnerability), 0 = immune. | Rate             *(number)* <br> |
 | Set invulnerable | Set whether the instance is invulnerable to damage. | Invulnerable             *(boolean)* <br> |
@@ -79,15 +65,17 @@ npm run dev
 | Take damage | Reduce health by the specified amount. | Amount             *(number)* <br> |
 | Advance status turns | Advance all turn-based statuses: tick, drain stacks and expire them. | Turns             *(number)* <br> |
 | Apply status | Apply or reapply a status for a duration in seconds or turns. | Status             *(string)* <br>Duration             *(number)* <br>Unit             *(combo)* <br>Stacks             *(number)* <br> |
-| Clear all statuses | Remove every active status, firing 'On status removed' for each. |  |
-| Remove status | Remove a status immediately, firing 'On status removed'. | Status             *(string)* <br> |
+| Clear all statuses | Remove every active status, firing On status (Removed) for each. |  |
+| Remove status | Remove a status immediately, firing On status (Removed). | Status             *(string)* <br> |
 | Remove status stacks | Remove stacks from a status. Reaching 0 stacks removes the status. | Status             *(string)* <br>Count             *(number)* <br> |
-| Set status periodic | Set the damage or healing a status applies on each tick. | Status             *(string)* <br>Type             *(combo)* <br>Amount per stack             *(number)* <br>Interval             *(number)* <br> |
-| Set status remaining | Set the seconds or turns left on an active status. 0 expires it, -1 makes it permanent. | Status             *(string)* <br>Remaining             *(number)* <br> |
-| Set status stacking | Set how a status stacks and how its duration reacts to reapplying. | Status             *(string)* <br>Max stacks             *(number)* <br>On reapply             *(combo)* <br>Stacks lost per tick             *(number)* <br> |
+| Set status modifier | Set a multiplier the status applies while active. Several statuses multiply together. | Status             *(string)* <br>Modifier             *(combo)* <br>Multiplier             *(number)* <br> |
+| Set status time remaining | Set the time remaining on an active status, in its unit. 0 expires it, -1 makes it permanent. | Status             *(string)* <br>Time remaining             *(number)* <br> |
+| Set status stacking | Set how a status stacks and how its duration reacts to reapplying. | Status             *(string)* <br>Max stacks             *(number)* <br>Reapply mode             *(combo)* <br>Stacks lost per tick             *(number)* <br> |
+| Set status tick | Set how often a status ticks and the damage or healing each tick applies. | Status             *(string)* <br>Type             *(combo)* <br>Amount per stack             *(number)* <br>Interval             *(number)* <br> |
 | Add to health pool | Add health to a named health pool. | Pool             *(string)* <br>Amount             *(number)* <br> |
 | Clear all health pools | Empty every health pool on this instance. |  |
 | Clear health pool | Empty a named health pool. | Pool             *(string)* <br> |
+| Set health pool absorption multiplier | Multiply every health pool's absorption rate without changing the rates themselves. | Multiplier             *(number)* <br> |
 | Set health pool | Set a named health pool to a specific amount. | Pool             *(string)* <br>Amount             *(number)* <br> |
 | Set health pool absorption rate | Set pool health lost per 1 damage. 1 = equal, 0.5 = armour-style, 2 = fragile. | Pool             *(string)* <br>Rate             *(number)* <br> |
 | Set health pool decay rate | Set how much a health pool drains per second. 0 disables decay. | Pool             *(string)* <br>Rate             *(number)* <br> |
@@ -101,6 +89,7 @@ npm run dev
 | Condition | Description | Params
 | --- | --- | --- |
 | Is dead | True if the instance is dead (health is 0). |  |
+| Is enabled | True if the behavior is enabled. |  |
 | Is invulnerable | True if the instance is currently invulnerable to damage. |  |
 | On damaged | Trigger when the instance takes damage. |  |
 | On death | Trigger when the instance dies. |  |
@@ -109,13 +98,8 @@ npm run dev
 | On revived | Triggers when the instance is revived from death. |  |
 | Has any status | True if any status is currently active. |  |
 | Has status | True if the status is currently active. | Status *(string)* <br> |
-| On any status applied | Triggers when any status becomes active. Use LastStatus for its name. |  |
-| On any status removed | Triggers whenever any status ends. Use LastStatus for its name. |  |
-| On status applied | Triggers when a status becomes active. | Status *(string)* <br> |
-| On status expired | Triggers when a status runs out of time or stacks. | Status *(string)* <br> |
-| On status reapplied | Triggers when a status is applied while already active. | Status *(string)* <br> |
-| On status removed | Triggers whenever a status ends for any reason. Use for cleanup. | Status *(string)* <br> |
-| On status ticked | Triggers after each tick of a status. Use LastTickAmount for the tick amount. | Status *(string)* <br> |
+| On any status | Triggers when any status is applied, reapplied, ticks, expires or is removed. Use LastStatus for its name. | Event *(combo)* <br> |
+| On status | Triggers when a status is applied, reapplied, ticks, expires or is removed. | Status *(string)* <br>Event *(combo)* <br> |
 | Any health pool has health | True if any health pool has health remaining. |  |
 | Health pool has health | True if the named health pool has health remaining. | Pool *(string)* <br> |
 | Is health pool | True if the pool that fired the last pool trigger has this name. | Pool *(string)* <br> |
@@ -141,13 +125,16 @@ npm run dev
 | StatusByIndex | Name of the active status at a 0-based index, in the order they became active. | string | Index *(number)* <br> | 
 | StatusCount | Number of active statuses. | number |  | 
 | StatusDuration | Duration the status was last applied with. -1 if permanent, 0 if not active. | number | Status *(string)* <br> | 
-| StatusRemaining | Seconds or turns left on a status. -1 if permanent, 0 if not active. | number | Status *(string)* <br> | 
+| StatusRemaining | Time remaining on a status, in seconds or turns. -1 if permanent, 0 if not active. | number | Status *(string)* <br> | 
 | StatusStacks | Current stacks of a status. 0 if not active. | number | Status *(string)* <br> | 
 | LastPoolDamageAbsorbed | Incoming damage absorbed by the pool that fired the last pool trigger. | number |  | 
 | LastPoolName | Name of the health pool that fired the most recent pool trigger. | string |  | 
 | LastTempDamageAbsorbed | Deprecated: use LastPoolDamageAbsorbed. Incoming damage absorbed by the pool that fired the last pool trigger. | number |  | 
 | LastTempHealthType | Deprecated: use LastPoolName. Name of the health pool that fired the most recent pool trigger. | string |  | 
+| PoolAbsorptionMultiplier | Multiplier currently applied to every pool's absorption rate: the global multiplier times every active status's. | number |  | 
 | PoolAbsorptionRate | Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style. | number | Pool *(string)* <br> | 
+| PoolByIndex | Name of the health pool at a 0-based index, in the order pools absorb damage (priority, then creation). | string | Index *(number)* <br> | 
+| PoolCount | Number of health pools on this instance, including empty ones. | number |  | 
 | PoolDecayRate | Pool health lost per second for a named pool. | number | Pool *(string)* <br> | 
 | PoolHealth | Current health of a named pool. | number | Pool *(string)* <br> | 
 | PoolPriority | Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist. | number | Pool *(string)* <br> | 
@@ -155,79 +142,3 @@ npm run dev
 | TempHealthAbsorptionRate | Deprecated: use PoolAbsorptionRate. Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style. | number | Pool *(string)* <br> | 
 | TempHealthDecayRate | Deprecated: use PoolDecayRate. Pool health lost per second for a named pool. | number | Pool *(string)* <br> | 
 | TempHealthPriority | Deprecated: use PoolPriority. Absorption priority of a named pool. Lower numbers absorb first. 0 if the pool does not exist. | number | Pool *(string)* <br> | 
-
-
----
-## Changelog
-
-### Version 1.3.0.0
-
-**Added:**
-- Status Effects: named statuses (burn, poison, stun, regen...) timed in seconds or turns.
-- Status stacking with max stacks, reapply modes (refresh / extend / keep) and stacks lost per tick.
-- Periodic status damage and healing that flows through health pools and absorption rate.
-- Advance status turns action for turn-based games.
-- Status triggers: On status applied / reapplied / ticked / expired / removed, plus On any status applied / removed.
-- Status expressions: StatusStacks, StatusRemaining, StatusDuration, StatusCount, StatusByIndex, LastStatus, LastTickAmount, LastDamageStatus, LastHealStatus.
-- Clear Statuses on Death property.
-- New pool expressions: PoolHealth, PoolAbsorptionRate, PoolDecayRate, PoolPriority, LastPoolDamageAbsorbed, LastPoolName.
-
-**Changed:**
-- "Temporary Health" is now called "Health Pools" (display names only, existing projects are unaffected).
-- Event sheet text now shows the object and behavior name ({my}).
-- Deprecated TempHealth, TempHealthAbsorptionRate, TempHealthDecayRate, TempHealthPriority, LastTempDamageAbsorbed and LastTempHealthType in favour of the new Pool expressions.
-- Deprecated ACEs are now hidden from the pickers, including Set health pool decay rate and Set health pool absorption rate (deprecated since 1.2.0.0; use Set health pool rates). Existing events keep working.
-
----
-
-### Version 1.2.1.0
-
-**Added:**
-- Add Revive Action
-- On Health Changed Condition
-- Trigger condition for Health pool Added.
-
-
----
-
-### Version 1.2.0.2
-
-**Added:**
-- Damage priority for Temporary Health : A number assigned to each pool. Pools are consumed in ascending order (lowest number first). Default is `0`. Equal-priority pools are consumed in creation order.
-
----
-
-### Version 1.2.0.1
-
----
-
-### Version 1.2.0.0
-
-**Added:**
-- Add Temporary Health Pools support.
-- Set custom Absorption rates for Health & Temporary Health.
-- Temporary Health (Absorption Rate / Decay Rate)
-
----
-
-### Version 1.1.1.0
-
-**Added:**
-- Fix bug thatcan make "On death" trigger twice for a single lethal hit
-- Create Guide
-
----
-
-### Version 1.1.0.0
-
-**Added:**
-Debugger will display the name given to the behaviour.
-
----
-
-### Version 1.0.0.0
-
-**Added:**
-Initial release.
-
----

@@ -1,7 +1,7 @@
 export const config = {
-  listName: "Set status periodic",
+  listName: "Set status tick",
   displayText: "{my}: Set status {0} to {1} {2} per stack every {3}",
-  description: "Set the damage or healing a status applies on each tick.",
+  description: "Set how often a status ticks and the damage or healing each tick applies.",
   params: [
     {
       id: "name",
@@ -18,13 +18,13 @@ export const config = {
       initialValue: "damage",
       items: [
         {
-          none: "none",
+          none: "None",
         },
         {
-          damage: "damage",
+          damage: "Damage",
         },
         {
-          heal: "heal",
+          heal: "Heal",
         }
       ],
     },
@@ -51,5 +51,5 @@ export const config = {
 export const expose = true;
 
 export default function (name, periodicType, amountPerStack, interval) {
-  this.setStatusPeriodic(name, periodicType, amountPerStack, interval);
+  this.setStatusTick(name, periodicType, amountPerStack, interval);
 }

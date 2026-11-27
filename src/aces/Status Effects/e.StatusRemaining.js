@@ -1,6 +1,6 @@
 export const config = {
   returnType: "number",
-  description: "Seconds or turns left on a status. -1 if permanent, 0 if not active.",
+  description: "Time remaining on a status, in seconds or turns. -1 if permanent, 0 if not active.",
   highlight: false,
   isDeprecated: false,
   params: [

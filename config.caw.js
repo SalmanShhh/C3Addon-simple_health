@@ -81,7 +81,18 @@ export const info = {
   },
 };
 
+// Construct saves property values by id, so order only matters to the runtime,
+// which looks each value up by id (see PROP in src/runtime/instance.js).
 export const properties = [
+  {
+    type: PROPERTY_TYPE.CHECK,
+    id: "debugMode",
+    name: "Debug Mode",
+    desc: "Write health events, and actions that were ignored, to the browser console to help find mistakes in events. Turn off for release.",
+    options: {
+      initialValue: false,
+    },
+  },
   {
     type: PROPERTY_TYPE.FLOAT,
     id: "maxHealth",
@@ -109,12 +120,20 @@ export const properties = [
       initialValue: false,
     },
   },
-  // Appended in 1.3.0.0 — properties are read by index, keep new ones at the end
   {
     type: PROPERTY_TYPE.CHECK,
     id: "clearStatusesOnDeath",
     name: "Clear Statuses on Death",
     desc: "Remove all active statuses when the instance dies.",
+    options: {
+      initialValue: true,
+    },
+  },
+  {
+    type: PROPERTY_TYPE.CHECK,
+    id: "enabled",
+    name: "Enabled",
+    desc: "When disabled, damage, healing and new statuses are ignored, and pool decay and status timers pause.",
     options: {
       initialValue: true,
     },

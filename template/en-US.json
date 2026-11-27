@@ -13,6 +13,10 @@
           "Temporary Health": "Health Pools"
         },
         "properties": {
+          "debugMode": {
+            "name": "Debug Mode",
+            "desc": "Write health events, and actions that were ignored, to the browser console to help find mistakes in events. Turn off for release."
+          },
           "maxHealth": {
             "name": "Max Health",
             "desc": "Initial maximum health for instances with this behavior."
@@ -28,6 +32,10 @@
           "clearStatusesOnDeath": {
             "name": "Clear Statuses on Death",
             "desc": "Remove all active statuses when the instance dies."
+          },
+          "enabled": {
+            "name": "Enabled",
+            "desc": "When disabled, damage, healing and new statuses are ignored, and pool decay and status timers pause."
           }
         },
         "actions": {
@@ -50,6 +58,21 @@
               "amount": {
                 "name": "Amount",
                 "desc": "Health to restore on revive. Use -1 to restore to max health."
+              }
+            }
+          },
+          "SetEnabled": {
+            "list-name": "Set enabled",
+            "display-text": "{my}: Set {0}",
+            "description": "Enable or disable the behavior. Disabled ignores damage, healing and new statuses, and pauses timers.",
+            "params": {
+              "state": {
+                "name": "State",
+                "desc": "Whether the behavior processes damage, healing and statuses.",
+                "items": {
+                  "disabled": "Disabled",
+                  "enabled": "Enabled"
+                }
               }
             }
           },
@@ -134,10 +157,10 @@
               },
               "unit": {
                 "name": "Unit",
-                "desc": "Seconds count down automatically; turns only advance with 'Advance status turns'.",
+                "desc": "Seconds count down automatically. Turns only count down with 'Advance status turns'.",
                 "items": {
-                  "seconds": "seconds",
-                  "turns": "turns"
+                  "seconds": "Seconds",
+                  "turns": "Turns"
                 }
               },
               "stacks": {
@@ -149,13 +172,13 @@
           "ClearAllStatuses": {
             "list-name": "Clear all statuses",
             "display-text": "{my}: Clear all statuses",
-            "description": "Remove every active status, firing 'On status removed' for each.",
+            "description": "Remove every active status, firing On status (Removed) for each.",
             "params": {}
           },
           "RemoveStatus": {
             "list-name": "Remove status",
             "display-text": "{my}: Remove status {0}",
-            "description": "Remove a status immediately, firing 'On status removed'.",
+            "description": "Remove a status immediately, firing On status (Removed).",
             "params": {
               "name": {
                 "name": "Status",
@@ -178,52 +201,46 @@
               }
             }
           },
-          "SetStatusPeriodic": {
-            "list-name": "Set status periodic",
-            "display-text": "{my}: Set status {0} to {1} {2} per stack every {3}",
-            "description": "Set the damage or healing a status applies on each tick.",
+          "SetStatusModifier": {
+            "list-name": "Set status modifier",
+            "display-text": "{my}: Set status {0} {1} multiplier to {2}",
+            "description": "Set a multiplier the status applies while active. Several statuses multiply together.",
             "params": {
               "name": {
                 "name": "Status",
-                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+                "desc": "Name of the status (e.g. \"corrode\"). Not case-sensitive."
               },
-              "periodicType": {
-                "name": "Type",
-                "desc": "What each tick does. Damage goes through health pools and absorption rate.",
+              "modifier": {
+                "name": "Modifier",
+                "desc": "Health pool absorption: multiplies every health pool's absorption rate (2 = pools drain twice as fast).",
                 "items": {
-                  "none": "none",
-                  "damage": "damage",
-                  "heal": "heal"
+                  "pool_absorption": "Health pool absorption"
                 }
               },
-              "amountPerStack": {
-                "name": "Amount per stack",
-                "desc": "Amount per tick, multiplied by the current stacks."
-              },
-              "interval": {
-                "name": "Interval",
-                "desc": "Tick every N seconds or turns (matches the status unit). 0 = no ticks."
+              "value": {
+                "name": "Multiplier",
+                "desc": "1 = no change, 2 = double, 0.5 = half, 0 = pools never deplete from damage."
               }
             }
           },
           "SetStatusRemaining": {
-            "list-name": "Set status remaining",
-            "display-text": "{my}: Set status {0} remaining to {1}",
-            "description": "Set the seconds or turns left on an active status. 0 expires it, -1 makes it permanent.",
+            "list-name": "Set status time remaining",
+            "display-text": "{my}: Set status {0} time remaining to {1}",
+            "description": "Set the time remaining on an active status, in its unit. 0 expires it, -1 makes it permanent.",
             "params": {
               "name": {
                 "name": "Status",
                 "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
               },
               "value": {
-                "name": "Remaining",
+                "name": "Time remaining",
                 "desc": "Seconds or turns left (matches the status unit). 0 expires it, -1 = permanent."
               }
             }
           },
           "SetStatusStacking": {
             "list-name": "Set status stacking",
-            "display-text": "{my}: Set status {0} stacking: max {1}, on reapply {2}, lose {3} stack(s) per tick",
+            "display-text": "{my}: Set status {0} stacking: max {1}, reapply mode {2}, lose {3} stack(s) per tick",
             "description": "Set how a status stacks and how its duration reacts to reapplying.",
             "params": {
               "name": {
@@ -235,17 +252,45 @@
                 "desc": "Maximum stacks. -1 = unlimited."
               },
               "reapplyMode": {
-                "name": "On reapply",
-                "desc": "Refresh resets the duration, extend adds to it, keep leaves it unchanged.",
+                "name": "Reapply mode",
+                "desc": "Refresh resets the duration, Extend adds to it, Keep leaves it unchanged.",
                 "items": {
-                  "refresh": "refresh",
-                  "extend": "extend",
-                  "keep": "keep"
+                  "refresh": "Refresh",
+                  "extend": "Extend",
+                  "keep": "Keep"
                 }
               },
               "stacksLostPerTick": {
                 "name": "Stacks lost per tick",
                 "desc": "Stacks removed after each tick. 0 = stacks never drain."
+              }
+            }
+          },
+          "SetStatusTick": {
+            "list-name": "Set status tick",
+            "display-text": "{my}: Set status {0} to {1} {2} per stack every {3}",
+            "description": "Set how often a status ticks and the damage or healing each tick applies.",
+            "params": {
+              "name": {
+                "name": "Status",
+                "desc": "Name of the status (e.g. \"burn\", \"poison\"). Not case-sensitive."
+              },
+              "periodicType": {
+                "name": "Type",
+                "desc": "What each tick does. Damage goes through health pools and absorption rate.",
+                "items": {
+                  "none": "None",
+                  "damage": "Damage",
+                  "heal": "Heal"
+                }
+              },
+              "amountPerStack": {
+                "name": "Amount per stack",
+                "desc": "Amount per tick, multiplied by the current stacks."
+              },
+              "interval": {
+                "name": "Interval",
+                "desc": "Tick every N seconds or turns (matches the status unit). 0 = no ticks."
               }
             }
           },
@@ -278,6 +323,17 @@
               "type": {
                 "name": "Pool",
                 "desc": "Name of the health pool to clear."
+              }
+            }
+          },
+          "SetPoolAbsorptionMultiplier": {
+            "list-name": "Set health pool absorption multiplier",
+            "display-text": "{my}: Set health pool absorption multiplier to {0}",
+            "description": "Multiply every health pool's absorption rate without changing the rates themselves.",
+            "params": {
+              "multiplier": {
+                "name": "Multiplier",
+                "desc": "1 = normal, 2 = pools drain twice as fast, 0.5 = half as fast, 0 = pools never deplete from damage."
               }
             }
           },
@@ -395,6 +451,12 @@
             "description": "True if the instance is dead (health is 0).",
             "params": {}
           },
+          "IsEnabled": {
+            "list-name": "Is enabled",
+            "display-text": "{my} Is enabled",
+            "description": "True if the behavior is enabled.",
+            "params": {}
+          },
           "IsInvulnerable": {
             "list-name": "Is invulnerable",
             "display-text": "{my} Is invulnerable",
@@ -448,70 +510,43 @@
               }
             }
           },
-          "OnAnyStatusApplied": {
-            "list-name": "On any status applied",
-            "display-text": "{my} On any status applied",
-            "description": "Triggers when any status becomes active. Use LastStatus for its name.",
-            "params": {}
-          },
-          "OnAnyStatusRemoved": {
-            "list-name": "On any status removed",
-            "display-text": "{my} On any status removed",
-            "description": "Triggers whenever any status ends. Use LastStatus for its name.",
-            "params": {}
-          },
-          "OnStatusApplied": {
-            "list-name": "On status applied",
-            "display-text": "{my} On status {0} applied",
-            "description": "Triggers when a status becomes active.",
+          "OnAnyStatus": {
+            "list-name": "On any status",
+            "display-text": "{my} On any status {0}",
+            "description": "Triggers when any status is applied, reapplied, ticks, expires or is removed. Use LastStatus for its name.",
             "params": {
-              "name": {
-                "name": "Status",
-                "desc": "Name of the status to listen for. Not case-sensitive."
+              "event": {
+                "name": "Event",
+                "desc": "Applied: became active. Reapplied: applied while active. Ticked: after each tick. Expired: ran out of time or stacks. Removed: ended for any reason.",
+                "items": {
+                  "applied": "Applied",
+                  "reapplied": "Reapplied",
+                  "ticked": "Ticked",
+                  "expired": "Expired",
+                  "removed": "Removed"
+                }
               }
             }
           },
-          "OnStatusExpired": {
-            "list-name": "On status expired",
-            "display-text": "{my} On status {0} expired",
-            "description": "Triggers when a status runs out of time or stacks.",
+          "OnStatus": {
+            "list-name": "On status",
+            "display-text": "{my} On status {0} {1}",
+            "description": "Triggers when a status is applied, reapplied, ticks, expires or is removed.",
             "params": {
               "name": {
                 "name": "Status",
                 "desc": "Name of the status to listen for. Not case-sensitive."
-              }
-            }
-          },
-          "OnStatusReapplied": {
-            "list-name": "On status reapplied",
-            "display-text": "{my} On status {0} reapplied",
-            "description": "Triggers when a status is applied while already active.",
-            "params": {
-              "name": {
-                "name": "Status",
-                "desc": "Name of the status to listen for. Not case-sensitive."
-              }
-            }
-          },
-          "OnStatusRemoved": {
-            "list-name": "On status removed",
-            "display-text": "{my} On status {0} removed",
-            "description": "Triggers whenever a status ends for any reason. Use for cleanup.",
-            "params": {
-              "name": {
-                "name": "Status",
-                "desc": "Name of the status to listen for. Not case-sensitive."
-              }
-            }
-          },
-          "OnStatusTicked": {
-            "list-name": "On status ticked",
-            "display-text": "{my} On status {0} ticked",
-            "description": "Triggers after each tick of a status. Use LastTickAmount for the tick amount.",
-            "params": {
-              "name": {
-                "name": "Status",
-                "desc": "Name of the status to listen for. Not case-sensitive."
+              },
+              "event": {
+                "name": "Event",
+                "desc": "Applied: became active. Reapplied: applied while active. Ticked: after each tick. Expired: ran out of time or stacks. Removed: ended for any reason.",
+                "items": {
+                  "applied": "Applied",
+                  "reapplied": "Reapplied",
+                  "ticked": "Ticked",
+                  "expired": "Expired",
+                  "removed": "Removed"
+                }
               }
             }
           },
@@ -640,7 +675,7 @@
           },
           "StatusRemaining": {
             "translated-name": "StatusRemaining",
-            "description": "Seconds or turns left on a status. -1 if permanent, 0 if not active.",
+            "description": "Time remaining on a status, in seconds or turns. -1 if permanent, 0 if not active.",
             "params": {
               "name": {
                 "name": "Status",
@@ -678,6 +713,11 @@
             "description": "Deprecated: use LastPoolName. Name of the health pool that fired the most recent pool trigger.",
             "params": {}
           },
+          "PoolAbsorptionMultiplier": {
+            "translated-name": "PoolAbsorptionMultiplier",
+            "description": "Multiplier currently applied to every pool's absorption rate: the global multiplier times every active status's.",
+            "params": {}
+          },
           "PoolAbsorptionRate": {
             "translated-name": "PoolAbsorptionRate",
             "description": "Pool health lost per 1 point of incoming damage for a named pool. 1 = equal, 0.5 = armour-style.",
@@ -687,6 +727,21 @@
                 "desc": "Name of the health pool."
               }
             }
+          },
+          "PoolByIndex": {
+            "translated-name": "PoolByIndex",
+            "description": "Name of the health pool at a 0-based index, in the order pools absorb damage (priority, then creation).",
+            "params": {
+              "index": {
+                "name": "Index",
+                "desc": "0-based index, from 0 to PoolCount - 1."
+              }
+            }
+          },
+          "PoolCount": {
+            "translated-name": "PoolCount",
+            "description": "Number of health pools on this instance, including empty ones.",
+            "params": {}
           },
           "PoolDecayRate": {
             "translated-name": "PoolDecayRate",

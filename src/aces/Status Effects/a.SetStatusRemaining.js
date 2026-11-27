@@ -1,7 +1,7 @@
 export const config = {
-  listName: "Set status remaining",
-  displayText: "{my}: Set status {0} remaining to {1}",
-  description: "Set the seconds or turns left on an active status. 0 expires it, -1 makes it permanent.",
+  listName: "Set status time remaining",
+  displayText: "{my}: Set status {0} time remaining to {1}",
+  description: "Set the time remaining on an active status, in its unit. 0 expires it, -1 makes it permanent.",
   params: [
     {
       id: "name",
@@ -12,7 +12,7 @@ export const config = {
     },
     {
       id: "value",
-      name: "Remaining",
+      name: "Time remaining",
       desc: "Seconds or turns left (matches the status unit). 0 expires it, -1 = permanent.",
       type: "number",
       initialValue: "5",

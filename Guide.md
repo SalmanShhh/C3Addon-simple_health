@@ -76,7 +76,7 @@ Event example:
 
 ```text
 Event: Player steps in fire
-  Action: Player.SimpleHealth -> "Apply status", "burn", 3, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "burn", 3, Seconds, 1
   // Burn damage, timing and expiry are handled by the behavior
 ```
 
@@ -88,6 +88,8 @@ Event: Player steps in fire
 
 Install `salmanshh_simple_health.c3addon` in Construct 3.
 
+An example project, `examples/simple health example.c3p`, shows a working setup you can open in Construct.
+
 ### Step 2 - Add behavior to objects
 
 Attach **Simple Health** to each object that needs HP (Player, Enemy, Breakable, etc.).
@@ -95,10 +97,12 @@ Attach **Simple Health** to each object that needs HP (Player, Enemy, Breakable,
 ### Step 3 - Configure behavior properties
 
 In the behavior properties panel, set:
+- **Debug Mode** (default false)
 - **Max Health** (default 100)
 - **Invulnerable** (default false)
 - **Destroy on Death** (default false)
 - **Clear Statuses on Death** (default true)
+- **Enabled** (default true)
 
 ### Step 4 - Wire first working example
 
@@ -135,10 +139,12 @@ Event: Every tick
 
 | Property | Type | Default | Description |
 |---|---|---|---|
+| **Debug Mode** | Check | `False` | If enabled, health events and ignored actions are written to the browser console. Turn off for release. |
 | **Max Health** | Float | `100` | Initial maximum health for each instance with this behavior. Current health starts at this value. |
 | **Invulnerable** | Check | `False` | If enabled, the instance starts immune to `Take damage`. |
 | **Destroy on Death** | Check | `False` | If enabled, the instance is destroyed when it dies. |
-| **Clear Statuses on Death** | Check | `True` | If enabled, every active status is removed when the instance dies, firing `On status removed` for each. If disabled, statuses stay but stop ticking until the instance is revived. |
+| **Clear Statuses on Death** | Check | `True` | If enabled, every active status is removed when the instance dies, firing `On status` (Removed) for each. If disabled, statuses stay but stop ticking until the instance is revived. |
+| **Enabled** | Check | `True` | If disabled, the instance ignores damage, healing and new statuses, and pool decay and status timers pause. Change it at runtime with `Set enabled`. |
 
 Property-driven startup example:
 
@@ -148,6 +154,39 @@ Event: On start of layout
   Action: UI -> Set text to "Spawn Shield Active"
   // Reads configured startup invulnerability directly
 ```
+
+### Enabled
+
+Disable the behavior when an object should sit out of the health system for a while: a cutscene, a pause menu, an enemy that has not woken up yet, or a pooled object waiting off-screen. While disabled:
+
+- `Take damage`, `Heal`, `Apply status` and `Advance status turns` are ignored, and no triggers fire.
+- Health pool decay and status timers pause, and continue where they left off when re-enabled.
+- Direct changes still work: `Set health`, `Set max health`, `Revive`, health pool actions, and removing or clearing statuses.
+- Every condition and expression still reads the current values.
+
+```text
+Event: Cutscene starts
+  Action: Player.SimpleHealth -> "Set enabled", Disabled
+  // Nothing can hurt the player and their burn timer is frozen
+
+Event: Cutscene ends
+  Action: Player.SimpleHealth -> "Set enabled", Enabled
+```
+
+Unlike `Set invulnerable`, which only blocks damage, disabling also stops healing and statuses. The enabled state is saved and loaded with the game.
+
+### Debug Mode
+
+Turn **Debug Mode** on while building your events to see what the behavior does in the browser console (F12, Console tab). Each line starts with the object's UID, so instances can be told apart:
+
+```text
+[Simple Health UID 12] Pool "shield" absorbed 20 damage (30 left).
+[Simple Health UID 12] Took 5 damage (health 95/100).
+[Simple Health UID 12] Status "burn" applied: 1 stack(s), 3 seconds.
+[Simple Health UID 12] 'Heal' 10 ignored: the instance is dead.
+```
+
+Damage, healing, death, revive, pool and status events are logged normally. Actions that were ignored (dead, disabled, or an invalid value such as a duration of 0) are logged as warnings, which is usually the fastest way to find out why an event "did nothing". When Debug Mode is off, logging costs nothing.
 
 ---
 
@@ -385,6 +424,27 @@ Event: Level transition
   // Empties every pool at once
 ```
 
+### Changing every pool at once
+
+`Set health pool absorption multiplier` scales every pool's absorption rate without changing the rates themselves. `1` is normal, `2` makes every pool lose health twice as fast, `0.5` half as fast, and `0` means pools never deplete from damage.
+
+```text
+Event: Difficulty set to Hard
+  Action: Player.SimpleHealth -> "Set health pool absorption multiplier", 1.5
+  // All of the player's shields and armour are 50% weaker
+```
+
+The multiplier combines with any active statuses that have a pool absorption modifier (see *Status modifiers* in section 8). `PoolAbsorptionMultiplier` returns the combined value that is currently applied.
+
+To loop over pools, use `PoolCount` and `PoolByIndex(index)`. Pools are listed in the order they absorb damage (priority, then creation), including empty ones:
+
+```text
+Event: Every tick
+  Action: PoolText -> Set text to ""
+  Repeat Player.SimpleHealth.PoolCount times
+    Action: PoolText -> Append Player.SimpleHealth.PoolByIndex(loopindex) & ": " & int(Player.SimpleHealth.PoolHealth(Player.SimpleHealth.PoolByIndex(loopindex))) & newline
+```
+
 ### Edge cases and gotchas
 
 - `Setup health pool` on an existing pool **replaces** its amount, rates and priority.
@@ -406,10 +466,10 @@ A **status** is a named condition on an instance, such as `"burn"`, `"poison"`, 
 | Concept | What it means |
 |---|---|
 | **Status name** | A string such as `"burn"`. Status names are **not** case-sensitive (`"Burn"` and `"burn"` are the same status). |
-| **Stacks** | A whole-number intensity. Periodic damage and healing are multiplied by the current stacks. |
-| **Duration unit** | `seconds` count down automatically and follow the object's time scale. `turns` only move when you use `Advance status turns`. |
-| **Tick** | One periodic firing every *interval* seconds or turns. A tick applies the status's damage or healing and fires `On status ticked`. |
-| **Reapply mode** | What applying an already-active status does to its duration: `refresh` (reset to the new duration), `extend` (add the new duration) or `keep` (unchanged). |
+| **Stacks** | A whole-number intensity. Tick damage and healing are multiplied by the current stacks. |
+| **Duration unit** | `Seconds` count down automatically and follow the object's time scale. `Turns` only move when you use `Advance status turns`. |
+| **Tick** | A firing every *interval* seconds or turns. A tick applies the status's damage or healing and fires `On status "..." Ticked`. |
+| **Reapply mode** | What applying an already-active status does to its duration: `Refresh` (reset to the new duration), `Extend` (add the new duration) or `Keep` (unchanged). |
 | **Active / inactive** | A status is active while it has stacks. When it ends it becomes inactive but keeps its settings, so you configure it once and apply it many times. |
 
 ### Applying a status
@@ -418,15 +478,15 @@ A **status** is a named condition on an instance, such as `"burn"`, `"poison"`, 
 
 ```text
 Event: Player touches Lava
-  Action: Player.SimpleHealth -> "Apply status", "burn", 3, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "burn", 3, Seconds, 1
   // Burns for 3 seconds
 
 Event: Enemy hit by SleepSpell
-  Action: Enemy.SimpleHealth -> "Apply status", "sleep", 2, turns, 1
+  Action: Enemy.SimpleHealth -> "Apply status", "sleep", 2, Turns, 1
   // Sleeps for 2 turns; turns only pass when you advance them
 
 Event: Player picks up Curse
-  Action: Player.SimpleHealth -> "Apply status", "cursed", -1, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "cursed", -1, Seconds, 1
   // Permanent until removed
 ```
 
@@ -436,16 +496,16 @@ Applying is ignored when the instance is dead, the duration is `0`, or stacks is
 
 Two actions configure a status. You can run them before the first apply (for example in `On created`) or at any time later; the settings are kept after the status expires.
 
-- `Set status stacking` (name, max stacks, on reapply, stacks lost per tick). Max stacks `-1` means unlimited.
-- `Set status periodic` (name, type, amount per stack, interval). Type is `none`, `damage` or `heal`.
+- `Set status stacking` (name, max stacks, reapply mode, stacks lost per tick). Max stacks `-1` means unlimited.
+- `Set status tick` (name, type, amount per stack, interval). Type is `None`, `Damage` or `Heal`.
 
-Defaults: unlimited stacks, reapply `refresh`, no stacks lost per tick, type `none`, interval `1`.
+Defaults: unlimited stacks, reapply `Refresh`, no stacks lost per tick, type `None`, interval `1`.
 
 ```text
 Event: Enemy.On created
-  Action: Enemy.SimpleHealth -> "Set status periodic", "burn", damage, 3, 1
+  Action: Enemy.SimpleHealth -> "Set status tick", "burn", Damage, 3, 1
   // Burn deals 3 damage per stack every 1 second (or turn)
-  Action: Enemy.SimpleHealth -> "Set status stacking", "burn", 5, refresh, 0
+  Action: Enemy.SimpleHealth -> "Set status stacking", "burn", 5, Refresh, 0
   // Up to 5 stacks; reapplying resets the duration
 ```
 
@@ -470,13 +530,13 @@ Applying a status that is already active adds stacks (up to max stacks) and chan
 
 | Reapply mode | Remaining duration after reapplying |
 |---|---|
-| `refresh` | Reset to the new duration. |
-| `extend` | New duration added on top. A permanent (`-1`) duration on either side makes it permanent. |
-| `keep` | Unchanged. Only stacks are added. |
+| `Refresh` | Reset to the new duration. |
+| `Extend` | New duration added on top. A permanent (`-1`) duration on either side makes it permanent. |
+| `Keep` | Unchanged. Only stacks are added. |
 
 Reapplying **never resets the tick timer**. An aura that reapplies burn every 0.5 seconds still ticks once per second. If you reapply with a different unit (seconds vs turns), the duration and tick timer restart.
 
-The first application fires `On status applied`; later applications while active fire `On status reapplied`.
+The first application fires `On status` (Applied); later applications while active fire `On status` (Reapplied).
 
 ### Damage and healing over time
 
@@ -501,31 +561,49 @@ Set **stacks lost per tick** to make stacks drain on each tick. Combined with a 
 
 ```text
 Event: On start of layout
-  Action: Enemy.SimpleHealth -> "Set status periodic", "poison", damage, 1, 1
-  Action: Enemy.SimpleHealth -> "Set status stacking", "poison", -1, keep, 1
+  Action: Enemy.SimpleHealth -> "Set status tick", "poison", Damage, 1, 1
+  Action: Enemy.SimpleHealth -> "Set status stacking", "poison", -1, Keep, 1
   // Poison deals damage equal to its stacks, then loses 1 stack per turn
 
 Event: Card "Deadly Poison" played on Enemy
-  Action: Enemy.SimpleHealth -> "Apply status", "poison", -1, turns, 5
+  Action: Enemy.SimpleHealth -> "Apply status", "poison", -1, Turns, 5
   // 5 + 4 + 3 + 2 + 1 = 15 damage over 5 turns, then it expires
 ```
 
 ### Status triggers
 
-Most status triggers take a status name and only run for that status. The "any" versions run for every status; read the name with `LastStatus`.
+There are two status triggers, each with an **Event** dropdown: `Applied`, `Reapplied`, `Ticked`, `Expired` or `Removed`.
+
+- **On status** takes a status name too, and only runs for that status: `On status "stun" Applied`.
+- **On any status** runs for every status; read the name with `LastStatus`: `On any status Removed`.
 
 ```text
-Event: Player.SimpleHealth -> On status "stun" applied
+Event: Player.SimpleHealth -> On status "stun" Applied
   Action: Player -> Set 8Direction enabled to False
   Action: StunStars -> Set visible
 
-Event: Player.SimpleHealth -> On status "stun" removed
+Event: Player.SimpleHealth -> On status "stun" Removed
   Action: Player -> Set 8Direction enabled to True
   Action: StunStars -> Set invisible
   // "Removed" covers every way a status can end, so cleanup always runs
 ```
 
-Ending order: when a status runs out naturally, `On status expired` fires first, then `On status removed`, then `On any status removed`. `Remove status`, `Remove status stacks` down to 0, `Clear all statuses` and death cleanup only fire the two "removed" triggers.
+Order: each event fires `On status` first, then `On any status`. When a status runs out naturally it fires *expired*, then *removed*. `Remove status`, `Remove status stacks` down to 0, `Clear all statuses` and death cleanup only fire *removed*.
+
+### Status modifiers
+
+`Set status modifier` gives a status an effect that applies only while it is active, with no restore events. Like `Set status stacking`, you set it once and it is kept after the status ends. The first modifier is **pool absorption**, which multiplies every health pool's absorption rate:
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Set status modifier", "corrode", Health pool absorption, 2
+  // While "corrode" is active, every pool loses health twice as fast
+
+Event: Player touches Acid
+  Action: Player.SimpleHealth -> "Apply status", "corrode", 5, Seconds, 1
+```
+
+Several active statuses multiply together, and with the global multiplier (section 7). The pools' own rates are never changed, so nothing needs restoring when the status ends.
 
 ### Reading status state
 
@@ -558,21 +636,21 @@ Event: Player uses Partial Cure
   Action: Player.SimpleHealth -> "Remove status stacks", "bleed", 2
 
 Event: Player uses Quicken
-  Action: Player.SimpleHealth -> "Set status remaining", "haste", 10
+  Action: Player.SimpleHealth -> "Set status time remaining", "haste", 10
   // 0 expires it now, -1 makes it permanent
 ```
 
 ### Death and revive
 
-With **Clear Statuses on Death** on (the default), every status is removed when the instance dies, firing `On status removed` for each. With it off, statuses stay but do not tick while dead, and continue after `Revive`.
+With **Clear Statuses on Death** on (the default), every status is removed when the instance dies, firing `On status` (Removed) for each. With it off, statuses stay but do not tick while dead, and continue after `Revive`.
 
 ### Edge cases and gotchas
 
 - Status names are case-insensitive, but health pool names are case-sensitive.
-- `On status ticked` fires even when the status's type is `none`, which is useful for custom per-tick logic.
-- `On status ticked` does not fire if that tick killed the instance.
+- `On status` (Ticked) fires even when the status's type is `None`, which is useful for custom per-tick logic.
+- `On status` (Ticked) does not fire if that tick killed the instance.
 - A status applied during another status's tick does not tick until the next frame or turn.
-- `Set status periodic` stores the amount you pass. An expression like `Self.SimpleHealth.MaxHealth / 16` is worked out once, when the action runs, so run it again after `Set max health` if you need it to follow max health.
+- `Set status tick` stores the amount you pass. An expression like `Self.SimpleHealth.MaxHealth / 16` is worked out once, when the action runs, so run it again after `Set max health` if you need it to follow max health.
 - Statuses are fully saved and loaded, including stacks, time left, tick timing and the active order.
 
 ---
@@ -626,6 +704,7 @@ Event: On start of layout
 | **Set invulnerable** | state | Turns damage immunity on or off. |
 | **Revive** | amount | Clears dead state and sets health to the amount, or to max with `-1`. |
 | **Set health absorption rate** | rate | Sets the multiplier on damage that reaches real health. `0` also turns on Invulnerable; any value above `0` turns it off. |
+| **Set enabled** | state | Enables or disables the behavior. Disabled ignores damage, healing and new statuses, and pauses timers. |
 
 ### Health Pools
 
@@ -638,6 +717,7 @@ Event: On start of layout
 | **Set health pool decay rate** | pool, rate | Deprecated: use `Set health pool rates`. Hidden from the picker; existing events keep working. |
 | **Set health pool absorption rate** | pool, rate | Deprecated: use `Set health pool rates`. Hidden from the picker; existing events keep working. |
 | **Set health pool priority** | pool, priority | Change the absorption order without touching amount or rates. |
+| **Set health pool absorption multiplier** | multiplier | Scale every pool's absorption rate without changing the rates. `1` = normal. |
 | **Clear health pool** | pool | Empty one pool. |
 | **Clear all health pools** | none | Empty every pool. |
 
@@ -645,14 +725,15 @@ Event: On start of layout
 
 | Action | Parameters | Description |
 |---|---|---|
-| **Apply status** | status, duration, unit, stacks | Apply or reapply a status. Duration `-1` = permanent. Unit is `seconds` or `turns`. |
-| **Remove status** | status | End a status now, firing `On status removed`. |
+| **Apply status** | status, duration, unit, stacks | Apply or reapply a status. Duration `-1` = permanent. Unit is `Seconds` or `Turns`. |
+| **Remove status** | status | End a status now, firing `On status` (Removed). |
 | **Remove status stacks** | status, count | Remove stacks; reaching 0 removes the status. |
-| **Set status remaining** | status, remaining | Set time or turns left. `0` expires it, `-1` makes it permanent. |
+| **Set status time remaining** | status, remaining | Set time or turns left. `0` expires it, `-1` makes it permanent. |
 | **Clear all statuses** | none | Remove every active status. |
 | **Advance status turns** | turns | Move every turns-based status forward: tick, drain stacks, expire. |
-| **Set status stacking** | status, max stacks, on reapply, stacks lost per tick | Configure stacking and how reapplying affects duration. |
-| **Set status periodic** | status, type, amount per stack, interval | Configure the damage or healing each tick applies. |
+| **Set status stacking** | status, max stacks, reapply mode, stacks lost per tick | Configure stacking and how reapplying affects duration. |
+| **Set status tick** | status, type, amount per stack, interval | Configure the damage or healing each tick applies. |
+| **Set status modifier** | status, modifier, multiplier | Set a multiplier the status applies while active. Modifier: `Health pool absorption` (every pool's absorption rate). |
 
 Action usage example:
 
@@ -664,7 +745,7 @@ Event: Difficulty changed to Hard
 
 Event: Boss phase 2 begins
   Action: Boss.SimpleHealth -> "Setup health pool", "phase_shield", 500, 0, 1.0, 0
-  Action: Boss.SimpleHealth -> "Apply status", "enraged", -1, seconds, 1
+  Action: Boss.SimpleHealth -> "Apply status", "enraged", -1, Seconds, 1
   // Shield must be broken first; "enraged" is a flag your AI events read
 ```
 
@@ -678,6 +759,7 @@ Event: Boss phase 2 begins
 |---|---|
 | **Is dead** | True when this instance is dead (health reached 0 and death logic ran). |
 | **Is invulnerable** | True when this instance currently ignores `Take damage`. |
+| **Is enabled** | True when the behavior is enabled. Invertible. |
 
 ### Health Pools
 
@@ -734,6 +816,9 @@ Event: On shield upgrade button pressed
 | **PoolPriority** | pool | Number | Absorption priority of the pool. Lower absorbs first. |
 | **LastPoolDamageAbsorbed** | none | Number | Damage absorbed by the pool that fired the last pool trigger. |
 | **LastPoolName** | none | String | Name of the pool that fired the most recent pool trigger. |
+| **PoolCount** | none | Number | Number of pools, including empty ones. |
+| **PoolByIndex** | index | String | Name of the pool at a 0-based index, in absorption order (priority, then creation). |
+| **PoolAbsorptionMultiplier** | none | Number | Multiplier currently applied to every pool's absorption rate: the global multiplier times every active status modifier. |
 
 ### Status Effects
 
@@ -806,13 +891,16 @@ Use `Is health pool` as a sub-condition inside any pool trigger to run logic for
 
 | Trigger | Description |
 |---|---|
-| **On status applied** (status) | The status became active. |
-| **On any status applied** | Any status became active. Use `LastStatus`. |
-| **On status reapplied** (status) | The status was applied while already active. |
-| **On status ticked** (status) | The status ticked, after its damage or healing was applied. |
-| **On status expired** (status) | The status ran out of time or stacks. |
-| **On status removed** (status) | The status ended for any reason. Use for cleanup. |
-| **On any status removed** | Any status ended. Use `LastStatus`. |
+| **On status** (status, event) | The named status had the chosen event. |
+| **On any status** (event) | Any status had the chosen event. Use `LastStatus` for its name. |
+
+| Event | When it fires |
+|---|---|
+| `Applied` | The status became active. |
+| `Reapplied` | The status was applied while already active. |
+| `Ticked` | The status ticked, after its damage or healing was applied. |
+| `Expired` | The status ran out of time or stacks. Followed by `Removed`. |
+| `Removed` | The status ended for any reason. Use for cleanup. |
 
 ```text
 Event: Player.SimpleHealth -> On health pool depleted
@@ -824,7 +912,7 @@ Event: Player.SimpleHealth -> On damaged
   Action: Audio -> Play "hit"
   // Only fires when damage gets past all pools to real health
 
-Event: Player.SimpleHealth -> On any status removed
+Event: Player.SimpleHealth -> On any status Removed
   Action: StatusLog -> Append LastStatus & " wore off"
   // One handler for every status ending
 ```
@@ -1092,10 +1180,10 @@ Event: Tank.SimpleHealth -> On health pool depleted
 ```text
 Event: Player uses Fortify
   Condition: Player.SimpleHealth -> Is dead (inverted)
-  Action: Player.SimpleHealth -> "Apply status", "fortify", 5, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "fortify", 5, Seconds, 1
   Action: Player.SimpleHealth -> "Set health absorption rate", 0.25
 
-Event: Player.SimpleHealth -> On status "fortify" removed
+Event: Player.SimpleHealth -> On status "fortify" Removed
   Action: Player.SimpleHealth -> "Set health absorption rate", 1.0
   // Timer, save/load and cleanup handled by the status; no Wait needed
 ```
@@ -1132,15 +1220,15 @@ Event: ContinueAccepted = True
 
 ```text
 Event: Enemy.On created
-  Action: Enemy.SimpleHealth -> "Set status periodic", "burn", damage, 5, 1
+  Action: Enemy.SimpleHealth -> "Set status tick", "burn", Damage, 5, 1
 
 Event: Fireball collides with Enemy
-  Action: Enemy.SimpleHealth -> "Apply status", "burn", 4, seconds, 1
+  Action: Enemy.SimpleHealth -> "Apply status", "burn", 4, Seconds, 1
   Action: Fireball -> Destroy
 
-Event: Enemy.SimpleHealth -> On status "burn" applied
+Event: Enemy.SimpleHealth -> On status "burn" Applied
   Action: Enemy -> Set effect "Tint" enabled
-Event: Enemy.SimpleHealth -> On status "burn" removed
+Event: Enemy.SimpleHealth -> On status "burn" Removed
   Action: Enemy -> Set effect "Tint" disabled
 ```
 
@@ -1153,10 +1241,10 @@ A 4 second burn with a 1 second interval ticks exactly 4 times.
 ```text
 Event: Player is overlapping FireTile
   Condition: Every 0.5 seconds
-  Action: Player.SimpleHealth -> "Apply status", "burn", 3, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "burn", 3, Seconds, 1
 
 Event: On start of layout
-  Action: Player.SimpleHealth -> "Set status stacking", "burn", 1, refresh, 0
+  Action: Player.SimpleHealth -> "Set status stacking", "burn", 1, Refresh, 0
   // One stack, duration resets while standing in fire
 ```
 
@@ -1167,17 +1255,17 @@ Reapplying keeps the tick timer, so the player still takes damage once per secon
 **Scenario:** A stun blocks input for 1.5 seconds.
 
 ```text
-Event: Player.SimpleHealth -> On status "stun" applied
+Event: Player.SimpleHealth -> On status "stun" Applied
   Action: Player -> Set Platform ignoring input
 
-Event: Player.SimpleHealth -> On status "stun" removed
+Event: Player.SimpleHealth -> On status "stun" Removed
   Action: Player -> Set Platform not ignoring input
 
 Event: Shockwave hits Player
-  Action: Player.SimpleHealth -> "Apply status", "stun", 1.5, seconds, 1
+  Action: Player.SimpleHealth -> "Apply status", "stun", 1.5, Seconds, 1
 ```
 
-Using `On status removed` for cleanup means death, cleanse and expiry all restore input.
+Using `On status` (Removed) for cleanup means death, cleanse and expiry all restore input.
 
 ### 24) Deckbuilder poison
 
@@ -1185,11 +1273,11 @@ Using `On status removed` for cleanup means death, cleanse and expiry all restor
 
 ```text
 Event: On start of layout
-  Action: Enemy.SimpleHealth -> "Set status periodic", "poison", damage, 1, 1
-  Action: Enemy.SimpleHealth -> "Set status stacking", "poison", -1, keep, 1
+  Action: Enemy.SimpleHealth -> "Set status tick", "poison", Damage, 1, 1
+  Action: Enemy.SimpleHealth -> "Set status stacking", "poison", -1, Keep, 1
 
 Event: Card "Poison Stab" played on Enemy
-  Action: Enemy.SimpleHealth -> "Apply status", "poison", -1, turns, 3
+  Action: Enemy.SimpleHealth -> "Apply status", "poison", -1, Turns, 3
 
 Event: Enemy turn starts
   Action: Enemy.SimpleHealth -> "Advance status turns", 1
@@ -1213,8 +1301,8 @@ Event: Unit's turn starts
 
 ```text
 Event: Player drinks RegenPotion
-  Action: Player.SimpleHealth -> "Set status periodic", "regen", heal, 3, 1
-  Action: Player.SimpleHealth -> "Apply status", "regen", 10, seconds, 1
+  Action: Player.SimpleHealth -> "Set status tick", "regen", Heal, 3, 1
+  Action: Player.SimpleHealth -> "Apply status", "regen", 10, Seconds, 1
 
 Event: Player.SimpleHealth -> On healed
   Condition: Player.SimpleHealth.LastHealStatus = "regen"
@@ -1268,10 +1356,10 @@ Event: Player uses Cleanse
 
 ```text
 Event: On start of layout
-  Action: Player.SimpleHealth -> "Set status periodic", "poison", none, 0, 1
+  Action: Player.SimpleHealth -> "Set status tick", "poison", None, 0, 1
   // Type none: the behavior only handles timing
 
-Event: Player.SimpleHealth -> On status "poison" ticked
+Event: Player.SimpleHealth -> On status "poison" Ticked
   Action: Player.SimpleHealth -> "Set health", Player.SimpleHealth.CurrentHealth - 2 * Player.SimpleHealth.StatusStacks("poison")
   // Set health skips pools; LastDamageStatus stays empty for custom damage
 ```
@@ -1284,17 +1372,291 @@ Event: Player.SimpleHealth -> On status "poison" ticked
 Event: Day ends
   Action: Crop.SimpleHealth -> "Advance status turns", 1
   Sub-condition: Crop.SimpleHealth -> Has status "watered" (inverted)
-    Action: Crop.SimpleHealth -> "Apply status", "blight", -1, turns, 1
+    Action: Crop.SimpleHealth -> "Apply status", "blight", -1, Turns, 1
 
 Event: Player waters Crop
-  Action: Crop.SimpleHealth -> "Apply status", "watered", 1, turns, 1
+  Action: Crop.SimpleHealth -> "Apply status", "watered", 1, Turns, 1
   Action: Crop.SimpleHealth -> "Remove status", "blight"
 
 Event: Crop.SimpleHealth -> On death
   Action: Crop -> Set animation to "withered"
 ```
 
-Set up blight once with `"Set status periodic", "blight", damage, 10, 1`.
+Set up blight once with `"Set status tick", "blight", damage, 10, 1`.
+
+### 32) Freeze the health system during a cutscene
+
+**Scenario:** During a cutscene nothing should hurt or heal the player, and their burn should not run out while the camera is away.
+
+```text
+Event: Cutscene starts
+  Action: Player.SimpleHealth -> "Set enabled", Disabled
+  // Damage and heals are ignored; status timers and pool decay pause
+
+Event: Cutscene ends
+  Action: Player.SimpleHealth -> "Set enabled", Enabled
+  // The burn continues with exactly the time it had left
+```
+
+Use `Set invulnerable` instead if the player should still heal and keep ticking statuses, and only damage should be blocked.
+
+### 33) Dormant enemies that wake up
+
+**Scenario:** Enemies placed in the level ignore stray hits until the player comes close.
+
+```text
+Event: On start of layout
+  Action: Enemy.SimpleHealth -> "Set enabled", Disabled
+  // Or untick the Enabled property on the enemy in the layout
+
+Event: Enemy is within 300 pixels of Player
+  Condition: Enemy.SimpleHealth -> Is enabled (inverted)
+  Action: Enemy.SimpleHealth -> "Set enabled", Enabled
+  Action: Enemy -> Set animation to "awake"
+```
+
+`Is enabled` inverted picks only the enemies that are still asleep, so the wake-up runs once per enemy.
+
+### 34) Finding out why an event "did nothing"
+
+**Scenario:** A healing potion seems to do nothing, and it is not clear why.
+
+```text
+Event: Player collides with Potion
+  Action: Player.SimpleHealth -> "Heal", 25
+  Action: Potion -> Destroy
+```
+
+Tick **Debug Mode** on the player's Simple Health, preview, and open the browser console (F12, Console tab). The reason is printed as a warning:
+
+```text
+[Simple Health UID 4] 'Heal' 25 ignored: the instance is dead.
+```
+
+Ignored actions always name the reason: dead, disabled, or an invalid value such as a status duration of 0. Turn Debug Mode off again before release.
+
+### 35) Rage meter that drains when you stop fighting (beat 'em up)
+
+**Scenario:** Every hit the player lands builds rage, up to 10. Rage boosts damage and drains one point every 2 seconds.
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Set status stacking", "rage", 10, Keep, 1
+  Action: Player.SimpleHealth -> "Set status tick", "rage", None, 0, 2
+  // No damage: the ticks exist only to drain one stack every 2 seconds
+
+Event: PlayerFist collides with Enemy
+  Action: Player.SimpleHealth -> "Apply status", "rage", -1, Seconds, 1
+  Action: Enemy.SimpleHealth -> "Take damage", 10 + 2 * Player.SimpleHealth.StatusStacks("rage")
+```
+
+The status is permanent, so it only ends when its stacks drain to 0. That makes it a decaying meter with no timer events.
+
+### 36) A plague that spreads between enemies
+
+**Scenario:** Infected enemies pass the plague to anything standing close to them.
+
+```text
+Event: Enemy.SimpleHealth -> On status "plague" Ticked
+  Sub-event: Infectable is within 80 pixels of Enemy
+  Condition: Infectable.SimpleHealth -> Has status "plague" (inverted)
+    Action: Infectable.SimpleHealth -> "Apply status", "plague", 6, Seconds, 1
+    // Every tick is a chance to infect neighbours
+```
+
+`Infectable` is a family that holds every enemy type and has Simple Health as a family behavior. That lets the spread pick *other* instances while `Enemy` stays the one that ticked. Set the plague's damage with `"Set status tick", "plague", damage, 2, 1`.
+
+### 37) Elemental reactions (Wet + Shock)
+
+**Scenario:** Shocking a wet target causes an "electrocute" burst and uses up both elements.
+
+```text
+Event: Enemy.SimpleHealth -> On status "shock" Applied
+  Condition: Enemy.SimpleHealth -> Has status "wet"
+    Action: Enemy.SimpleHealth -> "Take damage", 40
+    Action: Enemy.SimpleHealth -> "Remove status", "wet"
+    Action: Enemy.SimpleHealth -> "Remove status", "shock"
+    Action: System -> Create object "ElectrocuteFX" at Enemy.X, Enemy.Y
+
+Event: Enemy.SimpleHealth -> On status "wet" Applied
+  Condition: Enemy.SimpleHealth -> Has status "burn"
+    Action: Enemy.SimpleHealth -> "Remove status", "burn"
+    // Water puts out fire
+```
+
+Each element is a plain status, and the reactions are ordinary events on `On status` (Applied), so adding a new pairing means adding one event.
+
+### 38) Doom: die when the countdown ends, unless cleansed
+
+**Scenario:** A curse kills the target after 3 turns. Cleansing it in time saves them.
+
+```text
+Event: Lich casts Doom on Hero
+  Action: Hero.SimpleHealth -> "Apply status", "doom", 3, Turns, 1
+
+Event: Hero.SimpleHealth -> On status "doom" Expired
+  Action: Hero.SimpleHealth -> "Set health", 0
+  // Ran out naturally: the curse lands
+
+Event: Hero uses Holy Water
+  Action: Hero.SimpleHealth -> "Remove status", "doom"
+  // Removed, not expired: On status "doom" Expired does not fire, so the hero lives
+```
+
+This is where `On status` (Expired) and `On status` (Removed) differ. Put the consequence in *expired*, and cleanup that should always run in *removed*.
+
+### 39) Channelled spell that damage interrupts
+
+**Scenario:** A mage channels for 2 seconds to cast a meteor. Getting hit cancels it.
+
+```text
+Event: Player presses Q
+  Condition: Player.SimpleHealth -> Has status "channel" (inverted)
+  Action: Player.SimpleHealth -> "Apply status", "channel", 2, Seconds, 1
+  Action: Player -> Set animation to "channel"
+
+Event: Player.SimpleHealth -> On damaged
+  Condition: Player.SimpleHealth -> Has status "channel"
+  Action: Player.SimpleHealth -> "Remove status", "channel"
+  // Interrupted: removed, so the meteor never fires
+
+Event: Player.SimpleHealth -> On status "channel" Expired
+  Action: System -> Create object "Meteor" at Mouse.X, Mouse.Y
+
+Event: Player.SimpleHealth -> On status "channel" Removed
+  Action: Player -> Set animation to "idle"
+  // Runs both after a cast and after an interruption
+```
+
+`StatusRemaining("channel") / StatusDuration("channel")` drives a cast bar.
+
+### 40) Exposed: a shield break leaves the target vulnerable
+
+**Scenario:** When a knight's shield pool breaks, they take 50% more damage for 3 seconds.
+
+```text
+Event: Knight.SimpleHealth -> On health pool depleted
+  Condition: Knight.SimpleHealth -> Triggering health pool is "shield"
+  Action: Knight.SimpleHealth -> "Apply status", "exposed", 3, Seconds, 1
+  Action: Knight.SimpleHealth -> "Set health absorption rate", 1.5
+
+Event: Knight.SimpleHealth -> On status "exposed" Removed
+  Action: Knight.SimpleHealth -> "Set health absorption rate", 1.0
+```
+
+Pools, absorption rate and statuses work together: the status is the timer, and the absorption rate is the effect.
+
+### 41) Haste that every pickup extends
+
+**Scenario:** Each speed pickup adds 5 seconds of haste on top of what is left, shown as a shrinking bar.
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Set status stacking", "haste", 1, Extend, 0
+  // One stack; reapplying adds time instead of resetting it
+
+Event: Player collides with SpeedPickup
+  Action: Player.SimpleHealth -> "Apply status", "haste", 5, Seconds, 1
+  Action: Player -> Set Platform max speed to 450
+
+Event: Every tick
+  Condition: Player.SimpleHealth -> Has status "haste"
+  Action: HasteBar -> Set width to 100 * Player.SimpleHealth.StatusRemaining("haste") / Player.SimpleHealth.StatusDuration("haste")
+
+Event: Player.SimpleHealth -> On status "haste" Removed
+  Action: Player -> Set Platform max speed to 300
+```
+
+With `Extend`, `StatusDuration` grows to the new total, so the bar stays between 0 and 100%.
+
+### 42) Leech: drain an enemy to heal yourself
+
+**Scenario:** A vampire's bite drains 3 health per second from the target and gives it to the vampire.
+
+```text
+Event: Vampire bites Victim
+  Action: Victim.SimpleHealth -> "Set status tick", "leech", Damage, 3, 1
+  Action: Victim.SimpleHealth -> "Apply status", "leech", 5, Seconds, 1
+
+Event: Victim.SimpleHealth -> On status "leech" Ticked
+  Action: Vampire.SimpleHealth -> "Heal", Victim.SimpleHealth.LastTickAmount
+  // One status moves health between two objects
+```
+
+`LastTickAmount` is what the tick tried to deal, before the victim's health pools. The vampire heals the full amount even if a shield absorbed it. If shields should block the drain, compare `Victim.SimpleHealth.CurrentHealth` before and after instead. `LastDamage` won't work here, because a fully absorbed tick leaves it at the previous hit's value.
+
+### 43) Thorns that only reflect direct hits
+
+**Scenario:** A cactus enemy reflects melee damage back at the attacker, but not damage from its own burn.
+
+```text
+Event: Cactus.SimpleHealth -> On damaged
+  Condition: Cactus.SimpleHealth.LastDamageStatus = ""
+  Condition: Cactus.SimpleHealth -> Has status "thorns"
+  Action: Player.SimpleHealth -> "Take damage", Cactus.SimpleHealth.StatusStacks("thorns")
+```
+
+`LastDamageStatus` is empty for direct hits and names the status for ticks, so burn or poison on the cactus never triggers a reflection loop.
+
+### 44) Rhythm combo that breaks when you miss the beat
+
+**Scenario:** Every on-beat hit adds to a combo that multiplies score. Missing the next beat ends it.
+
+```text
+Event: Player hits a note on the beat
+  Action: Player.SimpleHealth -> "Apply status", "combo", 0.6, Seconds, 1
+  // Default refresh mode: each hit resets the 0.6 s window and adds a stack
+  Action: System -> Add 100 * Player.SimpleHealth.StatusStacks("combo") to Score
+
+Event: Player.SimpleHealth -> On status "combo" Expired
+  Action: Audio -> Play "combo_break"
+  Action: ComboText -> Set text to ""
+```
+
+Inside `On status` (Expired) the stacks already read 0. Show the final combo count from `On status` (Reapplied) instead, while it is still known.
+
+### 45) Hunger and well-fed driven by a variable (survival)
+
+**Scenario:** At 0 food the player starts starving. Eating ends it and grants a short regen.
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Set status tick", "starving", Damage, 1, 2
+  Action: Player.SimpleHealth -> "Set status tick", "wellfed", Heal, 2, 1
+
+Event: Food <= 0
+  Condition: Player.SimpleHealth -> Has status "starving" (inverted)
+  Action: Player.SimpleHealth -> "Apply status", "starving", -1, Seconds, 1
+  // Permanent until the player eats
+
+Event: Player eats Food
+  Action: System -> Set Food to 100
+  Action: Player.SimpleHealth -> "Remove status", "starving"
+  Action: Player.SimpleHealth -> "Apply status", "wellfed", 10, Seconds, 1
+```
+
+Your own variables decide when a status starts and ends; the behavior handles the damage, the healing and the timing in between.
+
+### 46) Acid that eats through every shield
+
+**Scenario:** An acid spitter's hits make all of the target's shields and armour wear down three times as fast for 4 seconds, however many pools it has.
+
+```text
+Event: On start of layout
+  Action: Player.SimpleHealth -> "Set status modifier", "acid", Health pool absorption, 3
+  // Set once: the multiplier only applies while "acid" is active
+
+Event: AcidBlob collides with Player
+  Action: Player.SimpleHealth -> "Apply status", "acid", 4, Seconds, 1
+
+Event: Player.SimpleHealth -> On status "acid" Applied
+  Repeat Player.SimpleHealth.PoolCount times
+    Action: System -> Create object "AcidSizzle" at Player.X, Player.Y
+    Action: AcidSizzle -> Set text to Player.SimpleHealth.PoolByIndex(loopindex)
+    // One sizzle label per pool being corroded
+```
+
+The pools' own absorption rates never change, so when the acid ends they are back to normal with no restore events. A second status such as `"brittle"` with its own modifier stacks multiplicatively, and `PoolAbsorptionMultiplier` shows the combined value.
 
 ### Other game use cases
 
@@ -1355,6 +1717,8 @@ Simple Health implements `_getDebuggerProperties`, so live state appears in the 
 
 | Field | Meaning |
 |---|---|
+| **debugMode** | Whether console logging is on. Editable, to turn logging on mid-preview. |
+| **enabled** | Whether the behavior is enabled. Editable. |
 | **destroyOnDeath** | Whether this instance destroys itself on death. |
 | **maxHealth** | Current max health. |
 | **CurrentHealth** | Current health value. |
@@ -1368,6 +1732,8 @@ Simple Health implements `_getDebuggerProperties`, so live state appears in the 
 | **pool[name].decayRate** | Decay rate of a pool. |
 | **pool[name].absorptionRate** | Absorption rate of a pool. |
 | **pool[name].priority** | Absorption priority of a pool. |
+| **poolAbsorptionMultiplier** | Global pool absorption multiplier. Editable. |
+| **effectivePoolAbsorptionMultiplier** | Global multiplier times every active status modifier: what damage actually uses. |
 | **clearStatusesOnDeath** | Whether statuses are cleared on death. |
 | **lastStatus** | Name of the status that fired the most recent status trigger. |
 | **lastDamageStatus** | Status behind the last damage, empty for direct hits. |
@@ -1385,7 +1751,7 @@ Debugger validation example:
 
 ```text
 Event: Press key K
-  Action: Player.SimpleHealth -> "Apply status", "burn", 5, seconds, 3
+  Action: Player.SimpleHealth -> "Apply status", "burn", 5, Seconds, 3
   // Watch burn.stacks and burn.remaining in the Statuses section
 ```
 
@@ -1410,10 +1776,12 @@ Parameters are in the same order as in the event sheet. Dropdown parameters take
 
 ```js
 health.TakeDamage(10);
+health.SetEnabled(0);                                 // 0 = Disabled, 1 = Enabled
+health.SetEnabled(1);
 health.Heal(25);
 health.SetupTempHealthPool("shield", 100, 0, 1, 0);   // "Setup health pool"
 health.ApplyStatus("burn", 5, "seconds", 1);          // or 0 for seconds, 1 for turns
-health.SetStatusPeriodic("burn", "damage", 3, 1);     // or 1 for damage
+health.SetStatusTick("burn", "damage", 3, 1);     // or 1 for damage
 health.SetStatusStacking("poison", -1, "keep", 1);    // or 2 for keep
 health.AdvanceStatusTurns(1);
 ```
@@ -1436,7 +1804,7 @@ for (let i = 0; i < health.StatusCount(); i++) {
 
 ### Triggers
 
-Triggers (`On damaged`, `On status ticked`, and so on) run event sheet blocks; this version does not dispatch script events. From script, either call your own function from those events or check state with the methods above.
+Triggers (`On damaged`, `On status` (Ticked), and so on) run event sheet blocks; this version does not dispatch script events. From script, either call your own function from those events or check state with the methods above.
 
 ### A complete example
 
@@ -1445,7 +1813,7 @@ Triggers (`On damaged`, `On status ticked`, and so on) run event sheet blocks; t
 function applyBleed(enemy, stacks) {
   const h = enemy.behaviors.SimpleHealth;
   h.SetStatusStacking("bleed", 10, "refresh", 0);
-  h.SetStatusPeriodic("bleed", "damage", 2, 0.5);
+  h.SetStatusTick("bleed", "damage", 2, 0.5);
   h.ApplyStatus("bleed", 4, "seconds", stacks);
   const perSecond = h.StatusStacks("bleed") * 2 / 0.5;
   console.log(`Bleeding for ${perSecond} damage per second`);
@@ -1474,7 +1842,7 @@ Event: Enemy.SimpleHealth -> On damaged
 
 ### Lethal damage flow
 
-On a lethal hit: health is clamped to 0, the dead flag is set, `On death` fires once, statuses are cleared (if enabled, firing `On status removed` for each), `On health changed` fires, and finally the instance is destroyed if **Destroy on Death** is on.
+On a lethal hit: health is clamped to 0, the dead flag is set, `On death` fires once, statuses are cleared (if enabled, firing `On status` (Removed) for each), `On health changed` fires, and finally the instance is destroyed if **Destroy on Death** is on.
 
 ### Status tick flow
 
@@ -1482,14 +1850,14 @@ For each active status, every frame (seconds) or every advanced turn (turns):
 
 1. The time left counts down.
 2. If a tick is due: its damage or healing is applied (which fires `On damaged`, `On healed`, `On death` and so on as normal).
-3. `On status ticked` fires. `LastTickAmount`, `LastStatus` and (for damage that reached real health) `LastDamageStatus` are set.
+3. `On status` (Ticked) fires. `LastTickAmount`, `LastStatus` and (for damage that reached real health) `LastDamageStatus` are set.
 4. Stacks are drained if **stacks lost per tick** is set. At 0 stacks the status expires.
-5. If the time left reached 0, the status expires: `On status expired`, then `On status removed`, then `On any status removed`.
+5. If the time left reached 0, the status expires: *expired* fires, then *removed* (each as `On status`, then `On any status`).
 
 If a tick kills the instance, processing stops immediately and no other status ticks on that frame or turn.
 
 ```text
-Event: Enemy.SimpleHealth -> On status "burn" ticked
+Event: Enemy.SimpleHealth -> On status "burn" Ticked
   Action: System -> Create object "Ember" at Enemy.X, Enemy.Y
   // Runs after the burn damage for this tick was applied
 ```
@@ -1502,6 +1870,8 @@ Event: Enemy.SimpleHealth -> On status "burn" ticked
 - **Invulnerability only blocks damage**, not `Set health`.
 - **Avoid overriding loaded HP** after `Load game` with startup reset events.
 - **Use `Is dead` before gameplay actions** (shoot, move, interact) when needed.
+- **An event "does nothing"? Turn on Debug Mode.** Ignored actions are logged with the reason (dead, disabled, invalid value).
+- **Disabled is not invulnerable**: disabling also blocks healing and statuses and pauses timers. Use `Set invulnerable` if only damage should be blocked.
 - **Use `Set max health` + `Set health` together** when rescaling entities mid-run.
 - **`Revive` does not fire `On healed`**; use `On revived` for revive effects.
 - **Use expressions for UI every tick**, but triggers for one-shot effects.
@@ -1511,11 +1881,11 @@ Event: Enemy.SimpleHealth -> On status "burn" ticked
 - **Use `Is health pool` inside pool triggers** rather than reading `LastPoolName` in a separate every-tick event.
 - **Absorption rate `0` is invulnerability**: it turns on the Invulnerable flag and blocks `Take damage` entirely, pools included. Use a tiny value like `0.001` if pools should still absorb while real health is immune.
 - **Absorption rate only affects damage that gets past every pool**; pool-absorbed damage is unaffected.
-- **Clean up in `On status removed`, not `On status expired`**: expired only covers running out naturally, while removed covers every way a status ends.
+- **Clean up in `On status` (Removed), not `On status` (Expired)**: expired only covers running out naturally, while removed covers every way a status ends.
 - **Status names ignore case, pool names do not**: `"Burn"` and `"burn"` are one status, but two different pools.
 - **Turns statuses never move on their own**: call `Advance status turns` from your turn system.
 - **Configure once, apply many times**: status settings persist on the instance after the status ends.
-- **Periodic amounts are fixed when set**: rerun `Set status periodic` if the amount should follow changing stats.
+- **Tick amounts are fixed when set**: rerun `Set status tick` if the amount should follow changing stats.
 - **Permanent statuses report `-1`** for `StatusRemaining` and `StatusDuration`; handle it in timer UI.
 
 Validation example:
@@ -1562,4 +1932,5 @@ Other changes to be aware of:
 
 - Event sheet rows now show the object and behavior name first, for example `Player (SimpleHealth): Take 10 damage`.
 - The new **Clear Statuses on Death** property defaults to on. It has no effect until you use statuses.
+- The new **Debug Mode** (off) and **Enabled** (on) properties default to the old behavior, so existing objects act exactly as before. Construct saves property values by name, so the new order in the Properties Bar does not affect your existing settings.
 - Deprecated ACEs are now hidden from the pickers. Events that already use them keep working. This covers the old `Temp...` expressions and the `Set health pool decay rate` / `Set health pool absorption rate` actions (deprecated since 1.2.0.0; use `Set health pool rates`).

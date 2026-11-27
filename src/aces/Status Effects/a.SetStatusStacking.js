@@ -1,6 +1,6 @@
 export const config = {
   listName: "Set status stacking",
-  displayText: "{my}: Set status {0} stacking: max {1}, on reapply {2}, lose {3} stack(s) per tick",
+  displayText: "{my}: Set status {0} stacking: max {1}, reapply mode {2}, lose {3} stack(s) per tick",
   description: "Set how a status stacks and how its duration reacts to reapplying.",
   params: [
     {
@@ -19,19 +19,19 @@ export const config = {
     },
     {
       id: "reapplyMode",
-      name: "On reapply",
-      desc: "Refresh resets the duration, extend adds to it, keep leaves it unchanged.",
+      name: "Reapply mode",
+      desc: "Refresh resets the duration, Extend adds to it, Keep leaves it unchanged.",
       type: "combo",
       initialValue: "refresh",
       items: [
         {
-          refresh: "refresh",
+          refresh: "Refresh",
         },
         {
-          extend: "extend",
+          extend: "Extend",
         },
         {
-          keep: "keep",
+          keep: "Keep",
         }
       ],
     },

@@ -20,15 +20,15 @@ export const config = {
     {
       id: "unit",
       name: "Unit",
-      desc: "Seconds count down automatically; turns only advance with 'Advance status turns'.",
+      desc: "Seconds count down automatically. Turns only count down with 'Advance status turns'.",
       type: "combo",
       initialValue: "seconds",
       items: [
         {
-          seconds: "seconds",
+          seconds: "Seconds",
         },
         {
-          turns: "turns",
+          turns: "Turns",
         }
       ],
     },
