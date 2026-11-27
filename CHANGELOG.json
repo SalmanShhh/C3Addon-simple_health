@@ -38,5 +38,10 @@
     "added": "- Status Effects: named statuses in seconds or turns, with stacks, reapply modes and damage/heal over time.\n- Advance status turns action for turn-based games.\n- On status / On any status triggers (event dropdown), status conditions and expressions.\n- Pool absorption multiplier, global or per status (Set status modifier); PoolCount / PoolByIndex.\n- Debug Mode (logs events and ignored actions), Enabled and Clear Statuses on Death properties; Set enabled / Is enabled.\n- Example project; Guide covers statuses, scripting and upgrading.",
     "changed": "- \"Temporary Health\" is now \"Health Pools\" (display names only, existing projects unaffected).\n- Event sheet text now shows the object and behavior name.\n- Temp... expressions deprecated; use the new Pool... expressions.\n- Deprecated ACEs are now hidden from pickers, incl. Set health pool decay/absorption rate (use Set health pool rates). Existing events keep working.\n- Debugger: Statuses section; pools shown as pool[name].",
     "fixed": ""
+  },
+  "1.3.0.1": {
+    "added": "",
+    "changed": "- update the addon description to include things related to the new featureset.",
+    "fixed": ""
   }
 }

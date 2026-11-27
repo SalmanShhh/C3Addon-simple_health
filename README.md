@@ -1,9 +1,9 @@
 <img src="./src/icon.svg" width="100" /><br>
 # Simple Health
-<i>A complete health management behavior for Construct 3 with damage, healing, and death detection.</i> <br>
-### Version 1.3.0.0
+<i>Health for any object: damage, healing, death and revive, shield and armour health pools, and status effects like burn, poison and regen in real time or turns.</i> <br>
+### Version 1.3.0.1
 
-[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.3.0.0.c3addon/salmanshh_simple_health-1.3.0.0.c3addon)
+[<img src="https://placehold.co/200x50/4493f8/FFF?text=Download&font=montserrat" width="200"/>](https://github.com/SalmanShhh/C3Addon-simple_health/releases/download/salmanshh_simple_health-1.3.0.1.c3addon/salmanshh_simple_health-1.3.0.1.c3addon)
 <br>
 <sub> [See all releases](https://github.com/SalmanShhh/C3Addon-simple_health/releases) </sub> <br>
 

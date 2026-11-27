@@ -14,7 +14,7 @@ export const minConstructVersion = undefined;
 export const author = "SalmanShh";
 export const website = "https://www.construct.net";
 export const documentation = "https://www.construct.net";
-export const description = "A complete health management behavior for Construct 3 with damage, healing, and death detection.";
+export const description = "Health for any object: damage, healing, death and revive, shield and armour health pools, and status effects like burn, poison and regen in real time or turns.";
 export const category = ADDON_CATEGORY.ATTRIBUTES;
 
 export const hasDomside = false;

@@ -5,7 +5,7 @@
     "behaviors": {
       "salmanshh_simple_health": {
         "name": "Simple Health",
-        "description": "A complete health management behavior for Construct 3 with damage, healing, and death detection.",
+        "description": "Health for any object: damage, healing, death and revive, shield and armour health pools, and status effects like burn, poison and regen in real time or turns.",
         "help-url": "https://www.construct.net",
         "aceCategories": {
           "Health": "Health",
